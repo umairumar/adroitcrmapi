@@ -1,0 +1,546 @@
+<?php
+
+namespace App\Http\Controllers\Api\V1;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use App\Models\CrmLead;
+
+use Illuminate\Support\Facades\Validator;
+
+class CrmLeadController extends Controller
+{
+    // CREATE DIRECT LEAD
+    public function directstore(Request $request)
+    {    
+            $lead = CrmLead::create(array_merge(
+                [
+                    'name'      => $request->name,
+                    'email'     => $request->email,
+                    'phone'     => $request->phone,
+                    'mby'       => $request->mby,
+                    'mdate'     => now(),
+                    'cby'       => $request->cby,
+                    'cdate'     => now()
+                ]
+            ));
+
+            return response()->json([
+                'status'  => true,
+                'message' => 'Lead created successfully',
+            ], 201);
+    }
+    
+    // LIST NEW LEADS
+    public function index(Request $request)
+    {
+        $authUser = $request->user();
+
+        $perPage = $request->input('per_page', 9);
+        
+        $crmLeads = CrmLead::query();
+        
+        if ($authUser->utype === 'sadmin') {
+                // Director → sees all users (optional: you can also exclude himself if needed)
+        } elseif ($authUser->utype === 'cadmin') {
+            // cadmin sees ONLY agents of same company
+            $companies = explode('-',trim($authUser->company,'-'));
+            $crmLeads->where('mby',$authUser->id) 
+            ->where(function ($q) use ($companies) {
+                foreach ($companies as $companyId) {
+                    $q->orWhere('company', 'like', "%-{$companyId}-%");
+                }
+            });
+        } else {
+            // Other roles → empty
+            $companies = explode('-',trim($authUser->company,'-'));
+            $crmLeads->where('agent',$authUser->id);
+        }
+        
+        if ($request->filled('search')) {
+            $crmLeads->where(function ($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->search . '%')
+                  ->orWhere('email', 'like', '%' . $request->search . '%')
+                  ->orWhere('phone', 'like', "%{$request->search}%");
+            });
+            if ($request->filled('date_from') && $request->filled('date_to')) {
+                    $crmLeads->whereBetween('created_at', [
+                        $request->date_from . ' 00:00:00',
+                        $request->date_to . ' 23:59:59'
+                    ]);
+            }
+        }
+        
+        $crmLeads = $crmLeads
+            ->where('status', 'New')
+            ->orderBy('id', 'desc')
+            ->paginate($perPage);
+            
+        return response()->json([
+            'status' => true,
+            'data'   => $crmLeads,
+            'meta'   => [
+                    'current_page' => $crmLeads->currentPage(),
+                    'last_page'    => $crmLeads->lastPage(),
+                    'per_page'     => $crmLeads->perPage(),
+                    'total'        => $crmLeads->total(),
+                ]
+        ]);
+    }
+
+    // GET SINGLE LEAD
+    public function show($id)
+    {
+        $lead = CrmLead::with('remarks')->find($id);
+
+        if (!$lead) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Lead not found'
+            ], 404);
+        }
+
+        return response()->json([
+            'status' => true,
+            'data'   => $lead
+        ]);
+    }
+
+    // CREATE LEAD
+    public function store(Request $request)
+    {
+            $validator = Validator::make($request->all(), [
+                'name'        => 'required',
+                'email'       => 'required|email',
+                'phone'       => 'required',
+            ], [
+                'email.email' => 'Invalid email address'
+            ]);
+            /*
+                'departure.required'    => 'Departure is required',
+                'destination.required'  => 'Destination is required',
+            */
+            /*
+                'departure'   => 'required',
+                'destination' => 'required',
+                'class'       => 'required',
+                'ddate'       => 'required',
+                'adult'       => 'required|integer',
+                'child'       => 'required|integer',
+                'infant'      => 'required|integer',
+                'brand'       => 'required',
+                'lead_type'   => 'required',
+                'status'      => 'required', 
+            */
+    
+            if ($validator->fails()) {
+                return response()->json([
+                    'status' => false,
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+    
+            $lead = CrmLead::create(array_merge(
+                $request->all(),
+                [
+                    'mby'   => $request->mby ?? 0,
+                    'cby'   => $request->cby ?? 0,
+                    'mate'  => now(),
+                    'cdate' => now()
+                ]
+            ));
+
+            return response()->json([
+                'status'  => true,
+                'message' => 'Lead created successfully',
+            ], 201);
+            
+    }
+
+    // UPDATE LEAD
+    public function update(Request $request, $id)
+    {
+        $lead = CrmLead::find($id);
+
+        if (!$lead) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Lead not found'
+            ], 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'name'        => 'required',
+            'email'       => 'required|email',
+            'phone'       => 'required'
+        ]);
+        /*
+            'adult'  => 'sometimes|integer',
+            'child'  => 'sometimes|integer',
+            'infant' => 'sometimes|integer',
+        */
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $lead->update(array_merge(
+            $request->all(),
+            [
+                'mby'   => $request->mby ?? 0,
+                'mdate' => now()
+            ]
+        ));
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'Lead updated successfully',
+            'data'    => $lead
+        ]);
+        
+    }
+
+    // DELETE LEAD
+    public function destroy($id)
+    {
+        $lead = CrmLead::find($id);
+
+        if (!$lead) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Lead not found'
+            ], 404);
+        }
+
+        $lead->delete();
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'Lead deleted successfully'
+        ]);
+    }
+
+    // ASSIGN Agent to LEAD
+    public function leadsassign(Request $request, $id)
+    {
+        $lead = CrmLead::find($id);
+
+        if (!$lead) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Lead not found'
+            ], 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'agent'  => 'sometimes|integer'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $lead->update(array_merge(
+            [
+                'agent'     => $request->agent ?? 0,
+                'mby'       => $request->mby ?? 0,
+                'status'    => 'Open',
+                'mdate'     => now()
+            ]
+        ));
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'Lead Assigned successfully',
+            'data'    => $lead
+        ]);
+
+    }
+
+    // Opened LEADS LIST
+    public function openleads(Request $request)
+    {
+        $perPage = $request->get('per_page', 9);
+
+        $crmLeads = CrmLead::query();
+        
+        if ($request->filled('search')) {
+            $crmLeads->where(function ($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->search . '%')
+                  ->orWhere('email', 'like', '%' . $request->search . '%')
+                  ->orWhere('phone', 'like', "%{$request->search}%");
+            });
+            if ($request->filled('date_from') && $request->filled('date_to')) {
+                    $crmLeads->whereBetween('created_at', [
+                        $request->date_from . ' 00:00:00',
+                        $request->date_to . ' 23:59:59'
+                    ]);
+            }
+        }
+
+        $crmLeads = $crmLeads->where('status','Open')->orderBy('id', 'desc')->paginate($perPage);
+
+        return response()->json([
+            'status' => true,
+            'data'   => $crmLeads,
+            'meta'   => [
+                    'current_page' => $crmLeads->currentPage(),
+                    'last_page'    => $crmLeads->lastPage(),
+                    'per_page'     => $crmLeads->perPage(),
+                    'total'        => $crmLeads->total(),
+            ]
+        ]);
+    }
+
+    // Move to Booked Leads
+    public function movetobookedleads(Request $request, $id)
+    {
+        $lead = CrmLead::find($id);
+
+        if (!$lead) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Lead not found'
+            ], 404);
+        }
+
+        $lead->update(array_merge(
+            [
+                'status'    => 'Booked',
+                'mdate'     => now()
+            ]
+        ));
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'Lead Booked successfully',
+            'data'    => $lead
+        ]);
+
+    }
+
+    // Booked LEADS LIST
+    public function bookedleads(Request $request)
+    {
+        $perPage = $request->get('per_page', 9);
+
+        $crmLeads = CrmLead::query();
+        
+        if ($request->filled('search')) {
+            $crmLeads->where(function ($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->search . '%')
+                  ->orWhere('email', 'like', '%' . $request->search . '%')
+                  ->orWhere('phone', 'like', "%{$request->search}%");
+            });
+            if ($request->filled('date_from') && $request->filled('date_to')) {
+                    $crmLeads->whereBetween('created_at', [
+                        $request->date_from . ' 00:00:00',
+                        $request->date_to . ' 23:59:59'
+                    ]);
+            }
+        }
+
+        $crmLeads = $crmLeads->where('status','Booked')->orderBy('id', 'desc')->paginate($perPage);
+
+        return response()->json([
+            'status' => true,
+            'data'   => $crmLeads,
+            'meta'   => [
+                    'current_page' => $crmLeads->currentPage(),
+                    'last_page'    => $crmLeads->lastPage(),
+                    'per_page'     => $crmLeads->perPage(),
+                    'total'        => $crmLeads->total(),
+            ]
+        ]);
+    }
+
+    // Move to Not Booked Leads
+    public function movetonotbookedleads(Request $request, $id)
+    {
+        $lead = CrmLead::find($id);
+
+        if (!$lead) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Lead not found'
+            ], 404);
+        }
+
+        $lead->update(array_merge(
+            [
+                'status'    => 'Not Booked',
+                'mdate'     => now()
+            ]
+        ));
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'Lead Not Booked successfully',
+            'data'    => $lead
+        ]);
+
+    }
+
+    // Booked LEADS LIST
+    public function notbookedleads(Request $request)
+    {
+        $perPage = $request->get('per_page', 9);
+
+        $crmLeads = CrmLead::query();
+        
+        if ($request->filled('search')) {
+            $crmLeads->where(function ($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->search . '%')
+                  ->orWhere('email', 'like', '%' . $request->search . '%')
+                  ->orWhere('phone', 'like', "%{$request->search}%");
+            });
+            if ($request->filled('date_from') && $request->filled('date_to')) {
+                    $crmLeads->whereBetween('created_at', [
+                        $request->date_from . ' 00:00:00',
+                        $request->date_to . ' 23:59:59'
+                    ]);
+            }
+        }
+
+        $crmLeads = $crmLeads->where('status','Not Booked')->orderBy('id', 'desc')->paginate($perPage);
+
+        return response()->json([
+            'status' => true,
+            'data'   => $crmLeads,
+            'meta'   => [
+                    'current_page' => $crmLeads->currentPage(),
+                    'last_page'    => $crmLeads->lastPage(),
+                    'per_page'     => $crmLeads->perPage(),
+                    'total'        => $crmLeads->total(),
+            ]
+        ]);
+    }
+
+    // Move to Archive Leads
+    public function movetoarchiveleads(Request $request, $id)
+    {
+        $lead = CrmLead::find($id);
+
+        if (!$lead) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Lead not found'
+            ], 404);
+        }
+
+        $lead->update(array_merge(
+            [
+                'status'    => 'Archive',
+                'mdate'     => now()
+            ]
+        ));
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'Lead Archived successfully',
+            'data'    => $lead
+        ]);
+
+    }
+
+    // Archive LEADS LIST
+    public function archiveleads(Request $request)
+    {
+        $perPage = $request->get('per_page', 9);
+
+        $crmLeads = CrmLead::query();
+        
+        if ($request->filled('search')) {
+            $crmLeads->where(function ($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->search . '%')
+                  ->orWhere('email', 'like', '%' . $request->search . '%')
+                  ->orWhere('phone', 'like', "%{$request->search}%");
+            });
+            if ($request->filled('date_from') && $request->filled('date_to')) {
+                    $crmLeads->whereBetween('created_at', [
+                        $request->date_from . ' 00:00:00',
+                        $request->date_to . ' 23:59:59'
+                    ]);
+            }
+        }
+
+        $crmLeads = $crmLeads->where('status','Archive')->orderBy('id', 'desc')->paginate($perPage);
+
+        return response()->json([
+            'status' => true,
+            'data'   => $crmLeads,
+            'meta'   => [
+                    'current_page' => $crmLeads->currentPage(),
+                    'last_page'    => $crmLeads->lastPage(),
+                    'per_page'     => $crmLeads->perPage(),
+                    'total'        => $crmLeads->total(),
+            ]
+        ]);
+    }
+
+    // FILTER BY COMPANY
+    public function leadsByCompany($companyId)
+    {
+        $leads = CrmLead::where('company', $companyId)->get();
+
+        return response()->json([
+            'status' => true,
+            'count'  => $leads->count(),
+            'data'   => $leads
+        ]);
+    }
+
+    // FILTER BY AGENT
+    public function leadsByAgent($agentId)
+    {
+        $leads = CrmLead::where('agent', $agentId)->get();
+
+        return response()->json([
+            'status' => true,
+            'count'  => $leads->count(),
+            'data'   => $leads
+        ]);
+    }
+
+    public function allleads(Request $request)
+    {
+        $perPage = $request->get('per_page', 9);
+        
+        $crmLeads = CrmLead::query();
+        
+        if ($request->filled('search')) {
+            $crmLeads->where(function ($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->search . '%')
+                  ->orWhere('email', 'like', '%' . $request->search . '%')
+                  ->orWhere('phone', 'like', "%{$request->search}%");
+            });
+            if ($request->filled('date_from') && $request->filled('date_to')) {
+                    $crmLeads->whereBetween('created_at', [
+                        $request->date_from . ' 00:00:00',
+                        $request->date_to . ' 23:59:59'
+                    ]);
+            }
+        }
+        
+        $crmLeads = $crmLeads
+            ->orderBy('id', 'desc')
+            ->paginate($perPage);
+            
+        return response()->json([
+            'status' => true,
+            'data'   => $crmLeads,
+            'meta'   => [
+                    'current_page' => $crmLeads->currentPage(),
+                    'last_page'    => $crmLeads->lastPage(),
+                    'per_page'     => $crmLeads->perPage(),
+                    'total'        => $crmLeads->total(),
+                ]
+        ]);
+    }
+
+}

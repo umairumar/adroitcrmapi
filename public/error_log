@@ -1,0 +1,30 @@
+[01-Jan-2026 17:51:13 UTC] PHP Fatal error:  Uncaught RuntimeException: Composer detected issues in your platform: Your Composer dependencies require a PHP version ">= 8.2.0". You are running 8.1.34. in /home/adroitso/api.haqtravels.co.uk/vendor/composer/platform_check.php:22
+Stack trace:
+#0 /home/adroitso/api.haqtravels.co.uk/vendor/composer/autoload_real.php(25): require()
+#1 /home/adroitso/api.haqtravels.co.uk/vendor/autoload.php(22): ComposerAutoloaderInitc514d8f7b9fc5970bdd94287905ef584::getLoader()
+#2 /home/adroitso/api.haqtravels.co.uk/public/index.php(14): require('/home/adroitso/...')
+#3 {main}
+  thrown in /home/adroitso/api.haqtravels.co.uk/vendor/composer/platform_check.php on line 22
+[01-Jan-2026 17:51:14 UTC] PHP Fatal error:  Uncaught RuntimeException: Composer detected issues in your platform: Your Composer dependencies require a PHP version ">= 8.2.0". You are running 8.1.34. in /home/adroitso/api.haqtravels.co.uk/vendor/composer/platform_check.php:22
+Stack trace:
+#0 /home/adroitso/api.haqtravels.co.uk/vendor/composer/autoload_real.php(25): require()
+#1 /home/adroitso/api.haqtravels.co.uk/vendor/autoload.php(22): ComposerAutoloaderInitc514d8f7b9fc5970bdd94287905ef584::getLoader()
+#2 /home/adroitso/api.haqtravels.co.uk/public/index.php(14): require('/home/adroitso/...')
+#3 {main}
+  thrown in /home/adroitso/api.haqtravels.co.uk/vendor/composer/platform_check.php on line 22
+[01-Jan-2026 17:51:15 UTC] PHP Fatal error:  Uncaught RuntimeException: Composer detected issues in your platform: Your Composer dependencies require a PHP version ">= 8.2.0". You are running 8.1.34. in /home/adroitso/api.haqtravels.co.uk/vendor/composer/platform_check.php:22
+Stack trace:
+#0 /home/adroitso/api.haqtravels.co.uk/vendor/composer/autoload_real.php(25): require()
+#1 /home/adroitso/api.haqtravels.co.uk/vendor/autoload.php(22): ComposerAutoloaderInitc514d8f7b9fc5970bdd94287905ef584::getLoader()
+#2 /home/adroitso/api.haqtravels.co.uk/public/index.php(14): require('/home/adroitso/...')
+#3 {main}
+  thrown in /home/adroitso/api.haqtravels.co.uk/vendor/composer/platform_check.php on line 22
+[01-Jan-2026 17:51:19 UTC] PHP Fatal error:  Uncaught RuntimeException: Composer detected issues in your platform: Your Composer dependencies require a PHP version ">= 8.2.0". You are running 8.1.34. in /home/adroitso/api.haqtravels.co.uk/vendor/composer/platform_check.php:22
+Stack trace:
+#0 /home/adroitso/api.haqtravels.co.uk/vendor/composer/autoload_real.php(25): require()
+#1 /home/adroitso/api.haqtravels.co.uk/vendor/autoload.php(22): ComposerAutoloaderInitc514d8f7b9fc5970bdd94287905ef584::getLoader()
+#2 /home/adroitso/api.haqtravels.co.uk/public/index.php(14): require('/home/adroitso/...')
+#3 {main}
+  thrown in /home/adroitso/api.haqtravels.co.uk/vendor/composer/platform_check.php on line 22
+[07-Jan-2026 11:07:19 UTC] PHP Fatal error:  Maximum execution time of 30 seconds exceeded in /home/adroitso/api.haqtravels.co.uk/vendor/laravel/framework/src/Illuminate/Hashing/BcryptHasher.php on line 61
+[15-Jan-2026 16:09:52 UTC] PHP Fatal error:  Cannot redeclare App\Models\User::getCompaniesAttribute() in /home/adroitso/api.haqtravels.co.uk/app/Models/User.php on line 64

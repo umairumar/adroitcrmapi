@@ -1,0 +1,112 @@
+[01-Jan-2026 17:51:20 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function env() in /home/adroitso/api.haqtravels.co.uk/config/cache.php:18
+Stack trace:
+#0 {main}
+  thrown in /home/adroitso/api.haqtravels.co.uk/config/cache.php on line 18
+[01-Jan-2026 17:51:20 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function env() in /home/adroitso/api.haqtravels.co.uk/config/auth.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/adroitso/api.haqtravels.co.uk/config/auth.php on line 17
+[01-Jan-2026 17:51:21 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function env() in /home/adroitso/api.haqtravels.co.uk/config/sanctum.php:18
+Stack trace:
+#0 {main}
+  thrown in /home/adroitso/api.haqtravels.co.uk/config/sanctum.php on line 18
+[01-Jan-2026 17:51:21 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function env() in /home/adroitso/api.haqtravels.co.uk/config/auth.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/adroitso/api.haqtravels.co.uk/config/auth.php on line 17
+[01-Jan-2026 17:51:23 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function env() in /home/adroitso/api.haqtravels.co.uk/config/database.php:19
+Stack trace:
+#0 {main}
+  thrown in /home/adroitso/api.haqtravels.co.uk/config/database.php on line 19
+[01-Jan-2026 17:51:23 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function env() in /home/adroitso/api.haqtravels.co.uk/config/filesystems.php:16
+Stack trace:
+#0 {main}
+  thrown in /home/adroitso/api.haqtravels.co.uk/config/filesystems.php on line 16
+[01-Jan-2026 17:51:23 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function env() in /home/adroitso/api.haqtravels.co.uk/config/mail.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/adroitso/api.haqtravels.co.uk/config/mail.php on line 17
+[01-Jan-2026 17:51:23 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function env() in /home/adroitso/api.haqtravels.co.uk/config/filesystems.php:16
+Stack trace:
+#0 {main}
+  thrown in /home/adroitso/api.haqtravels.co.uk/config/filesystems.php on line 16
+[01-Jan-2026 17:51:23 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function env() in /home/adroitso/api.haqtravels.co.uk/config/logging.php:21
+Stack trace:
+#0 {main}
+  thrown in /home/adroitso/api.haqtravels.co.uk/config/logging.php on line 21
+[01-Jan-2026 17:51:23 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function env() in /home/adroitso/api.haqtravels.co.uk/config/app.php:16
+Stack trace:
+#0 {main}
+  thrown in /home/adroitso/api.haqtravels.co.uk/config/app.php on line 16
+[01-Jan-2026 17:51:23 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function env() in /home/adroitso/api.haqtravels.co.uk/config/database.php:19
+Stack trace:
+#0 {main}
+  thrown in /home/adroitso/api.haqtravels.co.uk/config/database.php on line 19
+[01-Jan-2026 17:51:23 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function env() in /home/adroitso/api.haqtravels.co.uk/config/sanctum.php:18
+Stack trace:
+#0 {main}
+  thrown in /home/adroitso/api.haqtravels.co.uk/config/sanctum.php on line 18
+[01-Jan-2026 17:51:23 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function env() in /home/adroitso/api.haqtravels.co.uk/config/database.php:19
+Stack trace:
+#0 {main}
+  thrown in /home/adroitso/api.haqtravels.co.uk/config/database.php on line 19
+[01-Jan-2026 17:51:23 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function env() in /home/adroitso/api.haqtravels.co.uk/config/app.php:16
+Stack trace:
+#0 {main}
+  thrown in /home/adroitso/api.haqtravels.co.uk/config/app.php on line 16
+[01-Jan-2026 17:51:24 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function env() in /home/adroitso/api.haqtravels.co.uk/config/cache.php:18
+Stack trace:
+#0 {main}
+  thrown in /home/adroitso/api.haqtravels.co.uk/config/cache.php on line 18
+[01-Jan-2026 17:51:25 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function env() in /home/adroitso/api.haqtravels.co.uk/config/auth.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/adroitso/api.haqtravels.co.uk/config/auth.php on line 17
+[01-Jan-2026 17:51:25 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function env() in /home/adroitso/api.haqtravels.co.uk/config/queue.php:16
+Stack trace:
+#0 {main}
+  thrown in /home/adroitso/api.haqtravels.co.uk/config/queue.php on line 16
+[01-Jan-2026 17:51:26 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function env() in /home/adroitso/api.haqtravels.co.uk/config/filesystems.php:16
+Stack trace:
+#0 {main}
+  thrown in /home/adroitso/api.haqtravels.co.uk/config/filesystems.php on line 16
+[01-Jan-2026 17:51:26 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function env() in /home/adroitso/api.haqtravels.co.uk/config/database.php:19
+Stack trace:
+#0 {main}
+  thrown in /home/adroitso/api.haqtravels.co.uk/config/database.php on line 19
+[01-Jan-2026 17:51:27 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function env() in /home/adroitso/api.haqtravels.co.uk/config/queue.php:16
+Stack trace:
+#0 {main}
+  thrown in /home/adroitso/api.haqtravels.co.uk/config/queue.php on line 16
+[01-Jan-2026 17:51:27 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function env() in /home/adroitso/api.haqtravels.co.uk/config/logging.php:21
+Stack trace:
+#0 {main}
+  thrown in /home/adroitso/api.haqtravels.co.uk/config/logging.php on line 21
+[01-Jan-2026 17:51:27 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function env() in /home/adroitso/api.haqtravels.co.uk/config/mail.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/adroitso/api.haqtravels.co.uk/config/mail.php on line 17
+[01-Jan-2026 17:51:28 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function env() in /home/adroitso/api.haqtravels.co.uk/config/app.php:16
+Stack trace:
+#0 {main}
+  thrown in /home/adroitso/api.haqtravels.co.uk/config/app.php on line 16
+[01-Jan-2026 17:51:29 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function env() in /home/adroitso/api.haqtravels.co.uk/config/sanctum.php:18
+Stack trace:
+#0 {main}
+  thrown in /home/adroitso/api.haqtravels.co.uk/config/sanctum.php on line 18
+[01-Jan-2026 17:51:30 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function env() in /home/adroitso/api.haqtravels.co.uk/config/queue.php:16
+Stack trace:
+#0 {main}
+  thrown in /home/adroitso/api.haqtravels.co.uk/config/queue.php on line 16
+[01-Jan-2026 17:51:31 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function env() in /home/adroitso/api.haqtravels.co.uk/config/cache.php:18
+Stack trace:
+#0 {main}
+  thrown in /home/adroitso/api.haqtravels.co.uk/config/cache.php on line 18
+[01-Jan-2026 17:51:32 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function env() in /home/adroitso/api.haqtravels.co.uk/config/filesystems.php:16
+Stack trace:
+#0 {main}
+  thrown in /home/adroitso/api.haqtravels.co.uk/config/filesystems.php on line 16
+[01-Jan-2026 17:51:35 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function env() in /home/adroitso/api.haqtravels.co.uk/config/app.php:16
+Stack trace:
+#0 {main}
+  thrown in /home/adroitso/api.haqtravels.co.uk/config/app.php on line 16
