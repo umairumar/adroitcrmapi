@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\V1\UserController;
 use App\Http\Controllers\Api\V1\CrmLeadController;
 use App\Http\Controllers\Api\V1\LeadRemarkController;
 use App\Http\Controllers\Api\V1\FoldersController;
+use App\Http\Controllers\Api\V1\CrmPaymentController;
 
 Route::prefix('v1')->group(function () {
 
@@ -82,6 +83,12 @@ Route::prefix('v1')->group(function () {
             Route::post('/folders', [FoldersController::class, 'store']);         
             Route::put('/folders/{id}', [FoldersController::class, 'update']);     
             Route::delete('/folders/{id}', [FoldersController::class, 'destroy']); 
+
+        // Folder Payments
+            Route::get('/folders/{folderId}/payments', [CrmPaymentController::class, 'index']);
+            Route::post('/folders/{folderId}/payments', [CrmPaymentController::class, 'store']);
+            Route::put('/payments/{paymentId}', [CrmPaymentController::class, 'update']);
+            Route::put('/payments/{paymentId}/process', [CrmPaymentController::class, 'process']);
             
 
     });

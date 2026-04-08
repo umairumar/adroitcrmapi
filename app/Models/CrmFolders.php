@@ -9,6 +9,7 @@ use App\Models\CrmPassengers;
 use App\Models\CrmPassengersName;
 use App\Models\CrmTransport;
 use App\Models\CrmOther;
+use App\Models\CrmPayment;
 
 class CrmFolders extends Model
 {
@@ -52,5 +53,10 @@ class CrmFolders extends Model
     public function others()
     {
         return $this->hasMany(CrmOther::class, 'folder_id');
+    }
+
+    public function payments()
+    {
+        return $this->hasMany(CrmPayment::class, 'folder_id');
     }
 }

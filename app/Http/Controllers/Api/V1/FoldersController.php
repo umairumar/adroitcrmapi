@@ -17,13 +17,13 @@ class FoldersController extends Controller
 // LIST
     public function index()
     {
-        return CrmFolders::with(['itineraries', 'passengers', 'passengersNames', 'hotels', 'transport', 'others'])->get();
+        return CrmFolders::with(['itineraries', 'passengers', 'passengersNames', 'hotels', 'transport', 'others', 'payments'])->get();
     }
 
     // SHOW SINGLE
     public function show($id)
     {
-        return CrmFolders::with(['itineraries', 'passengers', 'passengersNames', 'hotels', 'transport', 'others'])
+        return CrmFolders::with(['itineraries', 'passengers', 'passengersNames', 'hotels', 'transport', 'others', 'payments'])
             ->findOrFail($id);
     }
 
@@ -156,7 +156,7 @@ class FoldersController extends Controller
                 }
             }
 
-            return CrmFolders::with(['itineraries', 'passengers', 'passengersNames', 'hotels', 'transport', 'others'])
+            return CrmFolders::with(['itineraries', 'passengers', 'passengersNames', 'hotels', 'transport', 'others', 'payments'])
                 ->findOrFail($id);
         });
 
