@@ -18,6 +18,7 @@ class CrmLead extends Model
         'class',
         'ddate',
         'rdate',
+        'lead_details',
         'name',
         'email',
         'phone',

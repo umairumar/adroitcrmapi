@@ -18,6 +18,7 @@ class CrmLeadController extends Controller
                     'name'      => $request->name,
                     'email'     => $request->email,
                     'phone'     => $request->phone,
+                    'lead_details' => $request->lead_details,
                     'mby'       => $request->mby,
                     'mdate'     => now(),
                     'cby'       => $request->cby,
@@ -109,10 +110,13 @@ class CrmLeadController extends Controller
     // CREATE LEAD
     public function store(Request $request)
     {
+            $authUser = $request->user();
+
             $validator = Validator::make($request->all(), [
                 'name'        => 'required',
                 'email'       => 'required|email',
                 'phone'       => 'required',
+                'lead_details'=> 'nullable|string',
             ], [
                 'email.email' => 'Invalid email address'
             ]);
@@ -139,20 +143,34 @@ class CrmLeadController extends Controller
                     'errors' => $validator->errors()
                 ], 422);
             }
-    
-            $lead = CrmLead::create(array_merge(
-                $request->all(),
-                [
-                    'mby'   => $request->mby ?? 0,
-                    'cby'   => $request->cby ?? 0,
-                    'mate'  => now(),
-                    'cdate' => now()
-                ]
-            ));
+            // Only allow fields that exist on the model (prevents mass-assignment surprises).
+            $payload = $request->only((new CrmLead())->getFillable());
+
+            // Default status if not provided
+            $payload['status'] = $payload['status'] ?? 'New';
+
+            // If an agent is creating a lead, auto-assign the lead to that agent.
+            if ($authUser && ($authUser->utype !== 'sadmin' && $authUser->utype !== 'cadmin')) {
+                $payload['agent'] = $authUser->id;
+            }
+
+            // Default company from authenticated user if missing.
+            if ($authUser && empty($payload['company'])) {
+                $payload['company'] = $authUser->company;
+            }
+
+            // Audit fields
+            $payload['cby'] = $authUser?->id ?? ($payload['cby'] ?? 0);
+            $payload['mby'] = $authUser?->id ?? ($payload['mby'] ?? 0);
+            $payload['cdate'] = $payload['cdate'] ?? now();
+            $payload['mdate'] = now();
+
+            $lead = CrmLead::create($payload);
 
             return response()->json([
                 'status'  => true,
                 'message' => 'Lead created successfully',
+                'data'    => $lead,
             ], 201);
             
     }
@@ -186,13 +204,14 @@ class CrmLeadController extends Controller
             ], 422);
         }
 
-        $lead->update(array_merge(
-            $request->all(),
-            [
-                'mby'   => $request->mby ?? 0,
-                'mdate' => now()
-            ]
-        ));
+        // Only allow fields that exist on the model (prevents mass-assignment surprises).
+        $payload = $request->only((new CrmLead())->getFillable());
+
+        // Audit fields
+        $payload['mby'] = $request->mby ?? 0;
+        $payload['mdate'] = now();
+
+        $lead->update($payload);
 
         return response()->json([
             'status'  => true,
