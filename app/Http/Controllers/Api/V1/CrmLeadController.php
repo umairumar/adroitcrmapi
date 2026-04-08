@@ -52,6 +52,15 @@ class CrmLeadController extends Controller
                     $q->orWhere('company', 'like', "%-{$companyId}-%");
                 }
             });
+        } elseif ($authUser->utype === 'agent') {
+            // cadmin sees ONLY agents of same company
+            $companies = explode('-',trim($authUser->company,'-'));
+            $crmLeads->where('cby',$authUser->id) 
+            ->where(function ($q) use ($companies) {
+                foreach ($companies as $companyId) {
+                    $q->orWhere('company', 'like', "%-{$companyId}-%");
+                }
+            });
         } else {
             // Other roles → empty
             $companies = explode('-',trim($authUser->company,'-'));
@@ -115,8 +124,7 @@ class CrmLeadController extends Controller
             $validator = Validator::make($request->all(), [
                 'name'        => 'required',
                 'email'       => 'required|email',
-                'phone'       => 'required',
-                'lead_details'=> 'nullable|string',
+                'phone'       => 'required'
             ], [
                 'email.email' => 'Invalid email address'
             ]);
@@ -160,10 +168,10 @@ class CrmLeadController extends Controller
             }
 
             // Audit fields
-            $payload['cby'] = $authUser?->id ?? ($payload['cby'] ?? 0);
-            $payload['mby'] = $authUser?->id ?? ($payload['mby'] ?? 0);
-            $payload['cdate'] = $payload['cdate'] ?? now();
-            $payload['mdate'] = now();
+            $payload['cby']     = $authUser?->id ?? ($payload['cby'] ?? 0);
+            $payload['mby']     = ($payload['mby'] ?? 0);
+            $payload['cdate']   = $payload['cdate'] ?? now();
+            $payload['mdate']   = now();
 
             $lead = CrmLead::create($payload);
 
