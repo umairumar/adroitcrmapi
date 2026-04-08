@@ -13,7 +13,7 @@ use App\Models\CrmOther;
 class CrmFolders extends Model
 {
     protected $table = 'crm_folders';
-    public $timestamps = false;
+    public $timestamps = true;
     
     protected $fillable = [
         'order_type','vendor_ref','company','booked_by','invoice_status',
@@ -21,7 +21,7 @@ class CrmFolders extends Model
         'ziaraats_makkah','ziaraats_madinah','balanceduedate',
         'sell','cost','commission','remaining',
         'lock_passengers','lock_hotels','lock_transport','lock_others',
-        'cby','cdate','mby','mdate'
+        'cby','cdate','mby','mdate',
     ];
 
     public function itineraries()
