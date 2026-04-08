@@ -4,6 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+use App\Models\CrmHotel;
+use App\Models\CrmPassengers;
+use App\Models\CrmPassengersName;
+use App\Models\CrmTransport;
+use App\Models\CrmOther;
 
 class CrmFolders extends Model
 {
@@ -26,6 +31,26 @@ class CrmFolders extends Model
 
     public function passengers()
     {
+        return $this->hasMany(CrmPassengers::class, 'folder_id');
+    }
+
+    public function passengersNames()
+    {
         return $this->hasMany(CrmPassengersName::class, 'folder_id');
+    }
+
+    public function hotels()
+    {
+        return $this->hasMany(CrmHotel::class, 'folder_id');
+    }
+
+    public function transport()
+    {
+        return $this->hasMany(CrmTransport::class, 'folder_id');
+    }
+
+    public function others()
+    {
+        return $this->hasMany(CrmOther::class, 'folder_id');
     }
 }

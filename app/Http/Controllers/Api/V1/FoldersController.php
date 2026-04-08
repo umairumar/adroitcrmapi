@@ -17,13 +17,13 @@ class FoldersController extends Controller
 // LIST
     public function index()
     {
-        return CrmFolders::with(['itineraries', 'passengers'])->get();
+        return CrmFolders::with(['itineraries', 'passengers', 'hotels', 'transport', 'others'])->get();
     }
 
     // SHOW SINGLE
     public function show($id)
     {
-        return CrmFolders::with(['itineraries', 'passengers'])
+        return CrmFolders::with(['itineraries', 'passengers', 'hotels', 'transport', 'others'])
             ->findOrFail($id);
     }
 
@@ -64,6 +64,25 @@ class FoldersController extends Controller
                         $folder->passengers()->create($row);
                     }
                 }
+
+                if (!empty($data['hotels'])) {
+                    foreach ($data['hotels'] as $row) {
+                        $folder->hotels()->create($row);
+                    }
+                }
+
+                if (!empty($data['transport'])) {
+                    foreach ($data['transport'] as $row) {
+                        $folder->transport()->create($row);
+                    }
+                }
+
+                if (!empty($data['others'])) {
+                    foreach ($data['others'] as $row) {
+                        $folder->others()->create($row);
+                    }
+                }
+                
             });
             
             return response()->json([
@@ -83,6 +102,9 @@ class FoldersController extends Controller
             // delete old and insert new
             $folder->itineraries()->delete();
             $folder->passengers()->delete();
+            $folder->hotels()->delete();
+            $folder->transport()->delete();
+            $folder->others()->delete();
 
             if ($request->itineraries) {
                 foreach ($request->itineraries as $row) {
@@ -93,6 +115,24 @@ class FoldersController extends Controller
             if ($request->passengers) {
                 foreach ($request->passengers as $row) {
                     $folder->passengers()->create($row);
+                }
+            }
+
+            if ($request->hotels) {
+                foreach ($request->hotels as $row) {
+                    $folder->hotels()->create($row);
+                }
+            }
+
+            if ($request->transport) {
+                foreach ($request->transport as $row) {
+                    $folder->transport()->create($row);
+                }
+            }
+
+            if ($request->others) {
+                foreach ($request->others as $row) {
+                    $folder->others()->create($row);
                 }
             }
         });
@@ -107,6 +147,9 @@ class FoldersController extends Controller
             $folder = CrmFolders::findOrFail($id);
             $folder->itineraries()->delete();
             $folder->passengers()->delete();
+            $folder->hotels()->delete();
+            $folder->transport()->delete();
+            $folder->others()->delete();
             $folder->delete();
         });
 
