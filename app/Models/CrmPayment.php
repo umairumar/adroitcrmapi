@@ -8,6 +8,9 @@ class CrmPayment extends Model
 {
     protected $table = 'crm_payments';
     public $timestamps = false;
+    protected $primaryKey = 'id';
+    public $incrementing = true;
+    protected $keyType = 'int';
 
     protected $fillable = [
         'folder_id',

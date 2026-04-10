@@ -43,15 +43,7 @@ class CrmPaymentController extends Controller
                 'message' => 'Folder must be saved before adding payment'
             ], 422);
         }
-
-        // If model uses timestamps, ensure it has been persisted.
-        if ($folder->usesTimestamps() && empty($folder->created_at)) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Folder must be saved before adding payment'
-            ], 422);
-        }
-
+        
         return null;
     }
 
@@ -81,9 +73,10 @@ class CrmPaymentController extends Controller
             'payment' => 'required',
             'pdate' => 'required|date',
             'payment_mode' => 'required',
-            'proof' => 'required',
-            'remarks' => 'sometimes|nullable|string|max:500',
+            // Accept actual upload; store path in DB.
+            'proof' => 'required|file|mimes:jpg,jpeg,png,webp,pdf|max:5120',
         ]);
+
 
         if ($validator->fails()) {
             return response()->json([
@@ -91,13 +84,27 @@ class CrmPaymentController extends Controller
                 'errors' => $validator->errors()
             ], 422);
         }
+        
+
+        $proofPath = null;
+        if ($request->hasFile('proof')) {
+            $dir = public_path('uploads/proofs');
+            if (!is_dir($dir)) {
+                @mkdir($dir, 0755, true);
+            }
+
+            $file = $request->file('proof');
+            $filename = time() . '_' . preg_replace('/\s+/', '_', $file->getClientOriginalName());
+            $file->move($dir, $filename);
+            $proofPath = 'uploads/proofs/' . $filename;
+        }
 
         $payment = CrmPayment::create([
             'folder_id' => (int) $folderId,
             'payment' => $request->payment,
             'pdate' => $request->pdate,
             'payment_mode' => $request->payment_mode,
-            'proof' => $request->proof,
+            'proof' => (string) $proofPath,
             // New payments are always pending; only Accountant can approve/reject.
             'status' => 'pending',
             'remarks' => $request->remarks,
@@ -134,8 +141,7 @@ class CrmPaymentController extends Controller
             'payment' => 'sometimes|required',
             'pdate' => 'sometimes|required|date',
             'payment_mode' => 'sometimes|required',
-            'proof' => 'sometimes|required',
-            'remarks' => 'sometimes|nullable|string|max:500',
+            'proof' => 'sometimes|file|mimes:jpg,jpeg,png,webp,pdf|max:5120',
         ]);
 
         if ($validator->fails()) {
@@ -145,7 +151,20 @@ class CrmPaymentController extends Controller
             ], 422);
         }
 
-        $payload = $request->only(['payment', 'pdate', 'payment_mode', 'proof', 'remarks']);
+        $payload = $request->only(['payment', 'pdate', 'payment_mode', 'remarks']);
+
+        if ($request->hasFile('proof')) {
+            $dir = public_path('uploads/proofs');
+            if (!is_dir($dir)) {
+                @mkdir($dir, 0755, true);
+            }
+
+            $file = $request->file('proof');
+            $filename = time() . '_' . preg_replace('/\s+/', '_', $file->getClientOriginalName());
+            $file->move($dir, $filename);
+            $payload['proof'] = 'uploads/proofs/' . $filename;
+        }
+
         $payment->update($payload);
 
         return response()->json([
@@ -174,7 +193,6 @@ class CrmPaymentController extends Controller
 
         $validator = Validator::make($request->all(), [
             'status' => 'required|string|max:50',
-            'remarks' => 'sometimes|nullable|string|max:500',
         ]);
 
         if ($validator->fails()) {
