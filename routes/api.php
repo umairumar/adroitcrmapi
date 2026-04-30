@@ -83,6 +83,7 @@ Route::prefix('v1')->group(function () {
             Route::post('/folders', [FoldersController::class, 'store']);         
             Route::put('/folders/{id}', [FoldersController::class, 'update']);     
             Route::put('/folders/{folderId}/installments', [FoldersController::class, 'updateInstallments']);
+            Route::post('/folders/parse-package-pdf', [FoldersController::class, 'parsePackagePdf']);
             Route::delete('/folders/{id}', [FoldersController::class, 'destroy']); 
 
         // Folder Payments
