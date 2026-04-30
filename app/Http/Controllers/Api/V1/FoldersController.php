@@ -16,6 +16,38 @@ use App\Services\UmrahPackagePdfParser;
 
 class FoldersController extends Controller
 {
+    private function cleanUtf8(mixed $value): mixed
+    {
+        if (is_array($value)) {
+            foreach ($value as $k => $v) {
+                $value[$k] = $this->cleanUtf8($v);
+            }
+            return $value;
+        }
+
+        if (is_string($value)) {
+            // PDFs sometimes yield invalid byte sequences; normalize to valid UTF-8 for JSON encoding.
+            if (function_exists('mb_check_encoding') && mb_check_encoding($value, 'UTF-8')) {
+                return $value;
+            }
+
+            if (function_exists('iconv')) {
+                $clean = @iconv('UTF-8', 'UTF-8//IGNORE', $value);
+                if ($clean !== false) {
+                    return $clean;
+                }
+            }
+
+            if (function_exists('mb_convert_encoding')) {
+                return @mb_convert_encoding($value, 'UTF-8', 'auto');
+            }
+
+            return utf8_encode($value);
+        }
+
+        return $value;
+    }
+
     private function normalizeInstallments(array $data): array
     {
         $installments = $data['installments']
@@ -324,13 +356,23 @@ class FoldersController extends Controller
         $absPath = Storage::disk('public')->path($storedPath);
 
         $parser = new UmrahPackagePdfParser();
-        $extracted = $parser->parseFile($absPath);
+        try {
+            $extracted = $parser->parseFile($absPath);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to parse PDF',
+                'error' => $e->getMessage(),
+            ], 422);
+        }
+
+        $safe = $this->cleanUtf8(array_diff_key($extracted, ['raw_text' => true]));
 
         return response()->json([
             'status' => true,
             'message' => 'PDF parsed',
             'package_pdf_path' => $storedPath,
-            'data' => array_diff_key($extracted, ['raw_text' => true]),
+            'data' => $safe,
         ]);
     }
 
