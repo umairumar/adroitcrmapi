@@ -14,6 +14,31 @@ use App\Models\CrmFolders;
 
 class FoldersController extends Controller
 {
+    private function normalizeInstallments(array $data): array
+    {
+        $installments = $data['installments']
+            ?? $data['folder_installments']
+            ?? $data['installments_plan']
+            ?? [];
+
+        return is_array($installments) ? $installments : [];
+    }
+
+    private function mapInstallmentRow(array $row, int $folderId): array
+    {
+        $amount = isset($row['installment_amount']) ? (float) $row['installment_amount'] : 0.00;
+        $due = array_key_exists('installment_due', $row) ? (float) $row['installment_due'] : $amount;
+        $status = array_key_exists('installment_payment_status', $row) ? (int) $row['installment_payment_status'] : 0;
+
+        return [
+            'folder_id' => $folderId,
+            'installment_payment_date' => $row['installment_payment_date'] ?? null,
+            'installment_amount' => $amount,
+            'installment_due' => $due,
+            'installment_payment_status' => $status,
+        ];
+    }
+
 // LIST
     public function index()
     {
@@ -90,6 +115,17 @@ class FoldersController extends Controller
                         $folder->others()->create($row);
                     }
                 }
+
+                $installments = $this->normalizeInstallments($data);
+                if (!empty($installments)) {
+                    foreach ($installments as $row) {
+                        $mapped = $this->mapInstallmentRow(is_array($row) ? $row : [], (int) $folder->id);
+                        if (empty($mapped['installment_payment_date'])) {
+                            continue;
+                        }
+                        DB::table('crm_folders_installments')->insert($mapped);
+                    }
+                }
                 
             });
             
@@ -161,6 +197,103 @@ class FoldersController extends Controller
         });
 
         return response()->json(['status' => true, 'message' => 'Folder updated', 'data' => $updatedFolder]);
+    }
+
+    // UPDATE INSTALLMENTS ONLY (do not update folder info)
+    public function updateInstallments(Request $request, $folderId)
+    {
+        $data = $request->json()->all();
+        if (empty($data)) {
+            $data = $request->all();
+        }
+
+        $installments = $this->normalizeInstallments($data);
+
+        $validator = Validator::make(
+            ['installments' => $installments],
+            [
+                'installments' => 'required|array',
+                'installments.*.id' => 'sometimes|integer|min:1',
+                'installments.*.installment_payment_date' => 'required|date',
+                'installments.*.installment_amount' => 'required|numeric|min:0',
+                'installments.*.installment_due' => 'sometimes|numeric|min:0',
+                'installments.*.installment_payment_status' => 'sometimes|integer|in:0,1',
+            ]
+        );
+        if ($validator->fails()) {
+            return response()->json(['status' => false, 'message' => 'Validation failed', 'errors' => $validator->errors()], 422);
+        }
+
+        $folder = CrmFolders::findOrFail($folderId);
+
+        $result = DB::transaction(function () use ($installments, $folder) {
+            $locked = [];
+
+            foreach ($installments as $row) {
+                $row = is_array($row) ? $row : [];
+                $mapped = $this->mapInstallmentRow($row, (int) $folder->id);
+                $installmentId = isset($row['id']) ? (int) $row['id'] : null;
+
+                if ($installmentId) {
+                    $existing = DB::table('crm_folders_installments')
+                        ->where('id', $installmentId)
+                        ->where('folder_id', (int) $folder->id)
+                        ->first();
+
+                    if (!$existing) {
+                        DB::table('crm_folders_installments')->insert($mapped);
+                        continue;
+                    }
+
+                    $existingStatus = (int) ($existing->installment_payment_status ?? 0);
+                    if ($existingStatus === 1) {
+                        $incomingStatus = (int) ($mapped['installment_payment_status'] ?? 1);
+                        $isSame =
+                            ($existing->installment_payment_date === $mapped['installment_payment_date']) &&
+                            ((float) $existing->installment_amount === (float) $mapped['installment_amount']) &&
+                            ((float) $existing->installment_due === (float) $mapped['installment_due']) &&
+                            ($incomingStatus === 1);
+
+                        if (!$isSame) {
+                            $locked[] = $installmentId;
+                        }
+                        continue;
+                    }
+
+                    DB::table('crm_folders_installments')
+                        ->where('id', $installmentId)
+                        ->where('folder_id', (int) $folder->id)
+                        ->update($mapped);
+                } else {
+                    DB::table('crm_folders_installments')->insert($mapped);
+                }
+            }
+
+            if (!empty($locked)) {
+                return ['locked' => $locked];
+            }
+
+            $list = DB::table('crm_folders_installments')
+                ->where('folder_id', (int) $folder->id)
+                ->orderBy('installment_payment_date', 'asc')
+                ->get();
+
+            return ['data' => $list];
+        });
+
+        if (!empty($result['locked'])) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Paid installments cannot be changed',
+                'locked_installment_ids' => $result['locked'],
+            ], 422);
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Installments updated',
+            'data' => $result['data'] ?? [],
+        ]);
     }
 
     // DELETE

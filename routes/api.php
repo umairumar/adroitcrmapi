@@ -82,13 +82,16 @@ Route::prefix('v1')->group(function () {
             Route::get('/folders/{id}', [FoldersController::class, 'show']);       
             Route::post('/folders', [FoldersController::class, 'store']);         
             Route::put('/folders/{id}', [FoldersController::class, 'update']);     
+            Route::put('/folders/{folderId}/installments', [FoldersController::class, 'updateInstallments']);
             Route::delete('/folders/{id}', [FoldersController::class, 'destroy']); 
 
         // Folder Payments
             Route::get('/folders/{folderId}/payments', [CrmPaymentController::class, 'index']);
             Route::post('/folders/{folderId}/payments', [CrmPaymentController::class, 'store']);
+            Route::get('/payments/{paymentId}', [CrmPaymentController::class, 'show']);
             Route::put('/payments/{paymentId}', [CrmPaymentController::class, 'update']);
             Route::put('/payments/{paymentId}/process', [CrmPaymentController::class, 'process']);
+            Route::delete('/payments/{paymentId}', [CrmPaymentController::class, 'destroy']);
             
 
     });

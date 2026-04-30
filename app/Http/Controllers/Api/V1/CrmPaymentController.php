@@ -47,6 +47,11 @@ class CrmPaymentController extends Controller
         return null;
     }
 
+    private function isApproved(CrmPayment $payment): bool
+    {
+        return strtolower((string) ($payment->status ?? '')) === 'approved';
+    }
+
     // List payments for a folder
     public function index($folderId)
     {
@@ -57,6 +62,23 @@ class CrmPaymentController extends Controller
         return response()->json([
             'status' => true,
             'data' => $payments
+        ]);
+    }
+
+    // Show single payment
+    public function show($paymentId)
+    {
+        $payment = CrmPayment::find($paymentId);
+        if (!$payment) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Payment not found'
+            ], 404);
+        }
+
+        return response()->json([
+            'status' => true,
+            'data' => $payment
         ]);
     }
 
@@ -122,12 +144,9 @@ class CrmPaymentController extends Controller
         ], 201);
     }
 
-    // Update payment details (Accountant only)
+    // Update payment details (blocked if approved)
     public function update(Request $request, $paymentId)
     {
-        if ($resp = $this->requireAccountant($request)) {
-            return $resp;
-        }
 
         $payment = CrmPayment::find($paymentId);
         if (!$payment) {
@@ -135,6 +154,13 @@ class CrmPaymentController extends Controller
                 'status' => false,
                 'message' => 'Payment not found'
             ], 404);
+        }
+
+        if ($this->isApproved($payment)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Approved payment cannot be updated'
+            ], 403);
         }
 
         $validator = Validator::make($request->all(), [
@@ -171,6 +197,40 @@ class CrmPaymentController extends Controller
             'status' => true,
             'message' => 'Payment updated successfully',
             'data' => $payment
+        ]);
+    }
+
+    // Delete payment (blocked if approved)
+    public function destroy(Request $request, $paymentId)
+    {
+        $payment = CrmPayment::find($paymentId);
+        if (!$payment) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Payment not found'
+            ], 404);
+        }
+
+        if ($this->isApproved($payment)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Approved payment cannot be deleted'
+            ], 403);
+        }
+
+        $proof = (string) ($payment->proof ?? '');
+        if ($proof !== '') {
+            $path = public_path($proof);
+            if (is_file($path)) {
+                @unlink($path);
+            }
+        }
+
+        $payment->delete();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Payment deleted successfully'
         ]);
     }
 
