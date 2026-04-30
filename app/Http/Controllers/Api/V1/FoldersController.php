@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Storage;
 use App\Models\User;
 use App\Models\CrmFolders;
 use App\Services\UmrahPackagePdfParser;
+use App\Services\PdfOcrService;
 
 class FoldersController extends Controller
 {
@@ -366,6 +367,44 @@ class FoldersController extends Controller
             ], 422);
         }
 
+        // Optional OCR for image-based flight tables, etc.
+        $ocrEnabled = (string) $request->query('ocr', '0') === '1';
+        $ocrMeta = [
+            'enabled' => $ocrEnabled,
+            'available' => false,
+            'used' => false,
+            'pages' => null,
+        ];
+        $ocrTextPreview = null;
+        if ($ocrEnabled) {
+            $pages = $request->query('ocr_pages');
+            $pages = is_string($pages) && $pages !== '' ? array_map('trim', explode(',', $pages)) : ['2'];
+
+            $ocr = new PdfOcrService();
+            $ocrMeta['pages'] = $pages;
+            $ocrMeta['available'] = $ocr->isAvailable();
+            if ($ocrMeta['available']) {
+                $ocrText = $ocr->ocrPdfPages($absPath, $pages);
+                if ($ocrText !== '') {
+                    $ocrMeta['used'] = true;
+                    if ((string) $request->query('debug_ocr_text', '0') === '1') {
+                        $ocrTextPreview = mb_substr($ocrText, 0, 4000);
+                    }
+                    $ocrParsed = $parser->parseText($ocrText);
+
+                    if (empty($extracted['itineraries']) && !empty($ocrParsed['itineraries'])) {
+                        $extracted['itineraries'] = $ocrParsed['itineraries'];
+                    }
+                    if (empty($extracted['hotels']) && !empty($ocrParsed['hotels'])) {
+                        $extracted['hotels'] = $ocrParsed['hotels'];
+                    }
+                    if (empty($extracted['passenger_names']) && !empty($ocrParsed['passenger_names'])) {
+                        $extracted['passenger_names'] = $ocrParsed['passenger_names'];
+                    }
+                }
+            }
+        }
+
         $safe = $this->cleanUtf8(array_diff_key($extracted, ['raw_text' => true]));
 
         return response()->json([
@@ -373,6 +412,8 @@ class FoldersController extends Controller
             'message' => 'PDF parsed',
             'package_pdf_path' => $storedPath,
             'data' => $safe,
+            'ocr' => $ocrMeta,
+            'ocr_text_preview' => $ocrTextPreview ? $this->cleanUtf8($ocrTextPreview) : null,
         ]);
     }
 
