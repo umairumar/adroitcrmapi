@@ -82,6 +82,7 @@ Route::prefix('v1')->group(function () {
             Route::get('/folders/{id}', [FoldersController::class, 'show']);       
             Route::post('/folders', [FoldersController::class, 'store']);         
             Route::put('/folders/{id}', [FoldersController::class, 'update']);     
+            Route::put('/folders/{folderId}/installments', [FoldersController::class, 'updateInstallments']);
             Route::delete('/folders/{id}', [FoldersController::class, 'destroy']); 
 
         // Folder Payments
