@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\CrmLeadController;
 use App\Http\Controllers\Api\V1\LeadRemarkController;
 use App\Http\Controllers\Api\V1\FoldersController;
 use App\Http\Controllers\Api\V1\CrmPaymentController;
+use App\Http\Controllers\Api\V1\DashboardController;
 
 Route::prefix('v1')->group(function () {
 
@@ -29,6 +30,9 @@ Route::prefix('v1')->group(function () {
         });
 
         Route::post('/logout', [AuthController::class, 'logout']);
+
+        // Dashboard
+            Route::get('/dashboard', [DashboardController::class, 'index']);
 
         // Companies APIs
             Route::get('/companies', [CrmCompanyController::class, 'index']); 
