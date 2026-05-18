@@ -62,6 +62,9 @@ class TenantRegistrationController extends Controller
                 'status' => 'active',
                 'plan' => 'trial',
                 'trial_ends_at' => now()->addDays($trialDays),
+                'billing_status' => 'trial',
+                'billing_email' => $request->admin_email,
+                'payment_terms_days' => (int) config('saas.billing.default_payment_terms_days', 30),
                 'settings' => [
                     'timezone' => $request->input('timezone', 'UTC'),
                     'currency' => $request->input('currency', 'GBP'),

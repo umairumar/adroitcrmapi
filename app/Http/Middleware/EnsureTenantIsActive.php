@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\Billing\TenantBillingService;
 use App\Services\Tenant\TenantContext;
 use Closure;
 use Illuminate\Http\Request;
@@ -9,6 +10,10 @@ use Symfony\Component\HttpFoundation\Response;
 
 class EnsureTenantIsActive
 {
+    public function __construct(
+        private readonly TenantBillingService $billing,
+    ) {}
+
     public function handle(Request $request, Closure $next): Response
     {
         if (TenantContext::shouldBypass()) {
@@ -21,18 +26,24 @@ class EnsureTenantIsActive
             return $next($request);
         }
 
-        if ($tenant->status !== 'active') {
-            return response()->json([
-                'status' => false,
-                'message' => 'Your organization account is not active. Please contact support.',
-            ], 403);
-        }
+        $this->billing->syncTenantBillingStatus($tenant);
+        $tenant->refresh();
 
-        if ($tenant->plan === 'trial' && $tenant->trial_ends_at && $tenant->trial_ends_at->isPast()) {
+        if (! $this->billing->canAccessPlatform($tenant)) {
+            $code = $this->billing->billingBlockReason($tenant) ?? 'billing_inactive';
+
+            $messages = [
+                'trial_expired' => 'Your trial has ended. A platform invoice is required to continue. Please contact billing.',
+                'invoice_overdue' => 'Your account has overdue invoices. Please settle payment to restore access.',
+                'account_suspended' => 'Your organization account is suspended due to billing. Please contact support.',
+                'account_inactive' => 'Your organization account is not active.',
+                'billing_inactive' => 'Billing is not active for this organization. Please contact support.',
+            ];
+
             return response()->json([
                 'status' => false,
-                'message' => 'Your trial has expired. Please upgrade your subscription.',
-                'code' => 'trial_expired',
+                'message' => $messages[$code] ?? $messages['billing_inactive'],
+                'code' => $code,
             ], 402);
         }
 

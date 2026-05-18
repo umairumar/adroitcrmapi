@@ -91,6 +91,8 @@ class SaasFoundationSeeder extends Seeder
                 'status' => 'active',
                 'plan' => 'enterprise',
                 'trial_ends_at' => null,
+                'billing_status' => 'active',
+                'payment_terms_days' => (int) config('saas.billing.default_payment_terms_days', 30),
             ]
         );
     }

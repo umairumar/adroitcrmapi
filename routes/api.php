@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\V1\CrmPaymentController;
 use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\TenantController;
 use App\Http\Controllers\Api\V1\TenantRegistrationController;
+use App\Http\Controllers\Api\V1\TenantBillingController;
 
 Route::prefix('v1')->group(function () {
 
@@ -47,6 +48,14 @@ Route::prefix('v1')->group(function () {
         // Tenant context
         Route::get('/tenant', [TenantController::class, 'me']);
         Route::get('/tenants', [TenantController::class, 'index']);
+
+        // Platform billing (invoice-based, no card subscriptions)
+        Route::get('/billing/invoices', [TenantBillingController::class, 'index']);
+        Route::post('/billing/invoices', [TenantBillingController::class, 'store']);
+        Route::post('/billing/invoices/{id}/send', [TenantBillingController::class, 'send']);
+        Route::post('/billing/invoices/{id}/paid', [TenantBillingController::class, 'markPaid']);
+        Route::post('/billing/invoices/{id}/void', [TenantBillingController::class, 'void']);
+        Route::get('/billing/my-invoices', [TenantBillingController::class, 'myInvoices']);
 
         // Dashboard
         Route::get('/dashboard', [DashboardController::class, 'index']);

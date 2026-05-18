@@ -17,8 +17,9 @@ return new class extends Migration
             $table->string('status', 20)->default('active'); // active, suspended, cancelled
             $table->string('plan', 50)->default('trial');
             $table->timestamp('trial_ends_at')->nullable();
-            $table->string('stripe_customer_id')->nullable();
-            $table->string('stripe_subscription_id')->nullable();
+            $table->string('billing_status', 30)->default('trial'); // trial, active, grace_period, suspended
+            $table->string('billing_email')->nullable();
+            $table->unsignedSmallInteger('payment_terms_days')->default(30);
             $table->json('settings')->nullable();
             $table->timestamps();
 

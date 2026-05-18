@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Services\Auth\AuthorizationService;
 use App\Services\Auth\BranchAccess;
 use App\Services\Audit\AuditLogger;
+use App\Services\Billing\TenantBillingService;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -17,6 +18,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(BranchAccess::class);
         $this->app->singleton(AuthorizationService::class);
         $this->app->singleton(AuditLogger::class);
+        $this->app->singleton(TenantBillingService::class);
     }
 
     /**

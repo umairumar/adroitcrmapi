@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\Tenant;
 use App\Services\Auth\AuthorizationService;
+use App\Services\Billing\TenantBillingService;
 use App\Services\Tenant\TenantContext;
 use Illuminate\Http\Request;
 
@@ -12,6 +13,7 @@ class TenantController extends Controller
 {
     public function __construct(
         private readonly AuthorizationService $authz,
+        private readonly TenantBillingService $billing,
     ) {}
 
     /**
@@ -33,6 +35,8 @@ class TenantController extends Controller
         }
 
         $limits = $tenant->planLimits();
+        $this->billing->syncTenantBillingStatus($tenant);
+        $tenant->refresh();
 
         return response()->json([
             'status' => true,
@@ -40,6 +44,13 @@ class TenantController extends Controller
                 'tenant' => $tenant,
                 'plan_limits' => $limits,
                 'on_trial' => $tenant->isOnTrial(),
+                'billing' => [
+                    'status' => $tenant->billing_status,
+                    'can_access' => $this->billing->canAccessPlatform($tenant),
+                    'block_reason' => $this->billing->billingBlockReason($tenant),
+                    'payment_terms_days' => $tenant->payment_terms_days,
+                    'billing_email' => $tenant->billingEmail(),
+                ],
                 'permissions' => $this->permissionsForUser($request->user()),
             ],
         ]);
