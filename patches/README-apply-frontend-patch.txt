@@ -19,7 +19,10 @@ Steps (Windows — PowerShell or cmd):
 
   6. From repo root (adroitsolscrmfront):
      git apply --ignore-whitespace frontend-saas-ui.patch
-     (If paths fail, try: git apply --ignore-whitespace -p0 frontend-saas-ui.patch)
+     - "trailing whitespace" lines are warnings only — OK to ignore if apply succeeds.
+     - "corrupt patch" at end of file: re-download patch (old version included a broken yarn.lock hunk).
+     - If paths fail, try: git apply --ignore-whitespace -p0 frontend-saas-ui.patch
+     - Do NOT run npm/yarn install before apply unless you want to fix lockfile yourself; patch skips yarn.lock.
 
   7. npm install
   8. npm run build
