@@ -72,10 +72,15 @@ class CampaignService
             ->get();
 
         foreach ($recipients as $recipient) {
-            $campaign = Campaign::with('steps.template')->find($recipient->campaign_id);
+            $campaign = Campaign::withoutGlobalScopes()
+                ->with('steps.template')
+                ->find($recipient->campaign_id);
             if (! $campaign) {
                 continue;
             }
+
+            TenantContext::set($campaign->tenant_id);
+            TenantContext::disableBypass();
 
             $steps = $campaign->steps;
             $stepIndex = (int) $recipient->current_step;
