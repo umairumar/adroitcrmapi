@@ -1,0 +1,874 @@
+diff --git a/.env b/.env
+deleted file mode 100644
+index 6025cbf..0000000
+--- a/.env
++++ /dev/null
+@@ -1,10 +0,0 @@
+-# VITE_API_BASE_URL=https://api.haqtravels.co.uk/api/v1
+-# VITE_BASE_UPLOAD_URL=https://api.haqtravels.co.uk/uploads
+-# VITE_COMPANY_API_BASE_URL=https://api.haqtravels.co.uk/api/v1
+-# VITE_FORGET_PASS=https://api.haqtravels.co.uk/api/v1/forgot-password
+-# VITE_RESET_PASS=https://api.haqtravels.co.uk/api/v1/reset-password
+-VITE_API_BASE_URL=http://localhost:8000/api/v1
+-VITE_BASE_UPLOAD_URL=http://localhost:8000/uploads
+-VITE_COMPANY_API_BASE_URL=http://localhost:8000/api/v1
+-VITE_FORGET_PASS=http://localhost:8000/api/v1/forgot-password
+-VITE_RESET_PASS=http://localhost:8000/api/v1/reset-password
+\ No newline at end of file
+diff --git a/.env.example b/.env.example
+new file mode 100644
+index 0000000..443cd8b
+--- /dev/null
++++ b/.env.example
+@@ -0,0 +1,11 @@
++# Local dev: use Vite proxy (see vite.config.ts) — paths are relative
++VITE_API_BASE_URL=/api/v1
++VITE_BASE_UPLOAD_URL=/uploads
++VITE_COMPANY_API_BASE_URL=/api/v1
++VITE_FORGET_PASS=/api/v1/forgot-password
++VITE_RESET_PASS=/api/v1/reset-password
++
++# Production example:
++# VITE_API_BASE_URL=https://api.haqtravels.co.uk/api/v1
++# VITE_BASE_UPLOAD_URL=https://api.haqtravels.co.uk/uploads
++# VITE_COMPANY_API_BASE_URL=https://api.haqtravels.co.uk/api/v1
+diff --git a/.gitignore b/.gitignore
+index a547bf3..e85930a 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -22,3 +22,6 @@ dist-ssr
+ *.njsproj
+ *.sln
+ *.sw?
++*.zip
++.env
++.env.local
+diff --git a/README.md b/README.md
+index 4866cf0..6c6c575 100644
+--- a/README.md
++++ b/README.md
+@@ -1,73 +1,45 @@
+-# React + TypeScript + Vite
++# Adroit Travel CRM — Frontend
+ 
+-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
++React + Vite UI for [adroitcrmapi](https://github.com/umairumar/adroitcrmapi).
+ 
+-Currently, two official plugins are available:
++## Local development (full stack)
+ 
+-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
+-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
++**Terminal 1 — API**
+ 
+-## React Compiler
++```bash
++cd adroitcrmapi
++./scripts/saas-install.sh
++php artisan serve
++```
++
++**Terminal 2 — Frontend**
+ 
+-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
++```bash
++cd adroitsolscrmfront
++cp .env.example .env.local
++npm install
++npm run dev
++```
+ 
+-## Expanding the ESLint configuration
++Open the URL Vite prints (usually http://localhost:5173). The dev server proxies `/api` and `/sanctum` to `http://127.0.0.1:8000`.
+ 
+-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
++## Production
+ 
+-```js
+-export default defineConfig([
+-  globalIgnores(['dist']),
+-  {
+-    files: ['**/*.{ts,tsx}'],
+-    extends: [
+-      // Other configs...
++Build with your live API URL:
+ 
+-      // Remove tseslint.configs.recommended and replace with this
+-      tseslint.configs.recommendedTypeChecked,
+-      // Alternatively, use this for stricter rules
+-      tseslint.configs.strictTypeChecked,
+-      // Optionally, add this for stylistic rules
+-      tseslint.configs.stylisticTypeChecked,
++```env
++VITE_API_BASE_URL=https://api.haqtravels.co.uk/api/v1
++VITE_BASE_UPLOAD_URL=https://api.haqtravels.co.uk/uploads
++```
+ 
+-      // Other configs...
+-    ],
+-    languageOptions: {
+-      parserOptions: {
+-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+-        tsconfigRootDir: import.meta.dirname,
+-      },
+-      // other options...
+-    },
+-  },
+-])
++```bash
++npm run build
+ ```
+ 
+-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
++Deploy the `dist/` folder to static hosting (Netlify, Vercel, cPanel, etc.).
+ 
+-```js
+-// eslint.config.js
+-import reactX from 'eslint-plugin-react-x'
+-import reactDom from 'eslint-plugin-react-dom'
++Ensure the Laravel API `.env` includes your frontend domain in `SANCTUM_STATEFUL_DOMAINS`.
+ 
+-export default defineConfig([
+-  globalIgnores(['dist']),
+-  {
+-    files: ['**/*.{ts,tsx}'],
+-    extends: [
+-      // Other configs...
+-      // Enable lint rules for React
+-      reactX.configs['recommended-typescript'],
+-      // Enable lint rules for React DOM
+-      reactDom.configs.recommended,
+-    ],
+-    languageOptions: {
+-      parserOptions: {
+-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+-        tsconfigRootDir: import.meta.dirname,
+-      },
+-      // other options...
+-    },
+-  },
+-])
+-```
++## SaaS dashboard
++
++After login, dashboard pages call `GET /api/v1/dashboard` for live leads, folders, payments, trends, and agent stats.
+diff --git a/src/Pages/Account Department/Dashboard.tsx b/src/Pages/Account Department/Dashboard.tsx
+index 165f8c8..626577a 100644
+--- a/src/Pages/Account Department/Dashboard.tsx	
++++ b/src/Pages/Account Department/Dashboard.tsx	
+@@ -1,14 +1,12 @@
+ import "./Component.css";
+-// import Navbar from "../../components/Navbar/Navbar";
+-// import InfoAdmin from "../../components/Admin_info_block/infoAdmin";
+-// import SalesRevenueChart from "../../components/Admin_info_block/SalesRevenueChart";
++import Navbar from "../../components/Navbar/Navbar";
++import DashboardShell from "../../components/Dashboard/DashboardShell";
++
+ const Dashboard = () => {
+   return (
+     <div className="p-8 space-y-12">
+-      {/* <Navbar />
+-      <InfoAdmin />
+-      <SalesRevenueChart/> */}
+-      <h1>This Is Dashboard</h1>
++      <Navbar />
++      <DashboardShell showCharts={false} />
+     </div>
+   );
+ };
+diff --git a/src/Pages/Admin/Dashboard.tsx b/src/Pages/Admin/Dashboard.tsx
+index ba7219f..b01a015 100644
+--- a/src/Pages/Admin/Dashboard.tsx
++++ b/src/Pages/Admin/Dashboard.tsx
+@@ -1,14 +1,12 @@
+ import "./Component.css";
+ import Navbar from "../../components/Navbar/Navbar";
+-import InfoAdmin from "../../components/Admin_info_block/infoAdmin";
+-import SalesRevenueChart from "../../components/Admin_info_block/SalesRevenueChart";
++import DashboardShell from "../../components/Dashboard/DashboardShell";
++
+ const Dashboard = () => {
+   return (
+     <div className="p-8 space-y-12">
+       <Navbar />
+-      <InfoAdmin />
+-      {/* <SalesRev/> */}
+-      <SalesRevenueChart/>
++      <DashboardShell />
+     </div>
+   );
+ };
+diff --git a/src/Pages/Agent/Dashboard.tsx b/src/Pages/Agent/Dashboard.tsx
+index 3c24d27..fce5b16 100644
+--- a/src/Pages/Agent/Dashboard.tsx
++++ b/src/Pages/Agent/Dashboard.tsx
+@@ -1,17 +1,14 @@
+ import "./Component.css";
+-// import Navbar from "../../components/Navbar/Header";
+-import InfoAdmin from "../../components/Admin_info_block/infoAdmin";
+-import RecentBooking from "./RecentBooking";
+-// import AgentNavbar from "./AgentNavbar";
+ import Navbar from "../../components/Navbar/Navbar";
++import DashboardShell from "../../components/Dashboard/DashboardShell";
++import RecentBooking from "./RecentBooking";
++
+ const Dashboard = () => {
+   return (
+     <div className="p-8 space-y-12">
+       <Navbar />
+-      <InfoAdmin />
+-      {/* <SalesRev/> */}
+-      {/* <SalesRevenueChart/> */}
+-      <RecentBooking/>
++      <DashboardShell showCharts={false} />
++      <RecentBooking />
+     </div>
+   );
+ };
+diff --git a/src/Pages/Agent/RecentBooking.tsx b/src/Pages/Agent/RecentBooking.tsx
+index 3eeafcb..f9ae1d7 100644
+--- a/src/Pages/Agent/RecentBooking.tsx
++++ b/src/Pages/Agent/RecentBooking.tsx
+@@ -4,7 +4,7 @@ import TravelStartIcon from "../../assets/images/Travel_Start_Date.svg";
+ import TravelEndIcon from "../../assets/images/Travel_End_Data.svg";
+ import EditIcon from "../../assets/images/edit_icon.svg";
+ import ViewIcon from "../../assets/images/view_icon.svg";
+-import CompleteIcon from "../../assets/images/Complete_icon.svg";
++import CompleteIcon from "../../assets/images/Complete_Icon.svg";
+ import LeadIcon from "../../assets/images/Lead_icon.svg";
+ import PendingIcon from "../../assets/images/Pending_icon.svg";
+ import PaymentIcon from "../../assets/images/Payment_icon.svg";
+diff --git a/src/Pages/Manager/Dashboard.tsx b/src/Pages/Manager/Dashboard.tsx
+index ff0c673..b01a015 100644
+--- a/src/Pages/Manager/Dashboard.tsx
++++ b/src/Pages/Manager/Dashboard.tsx
+@@ -1,16 +1,14 @@
+ import "./Component.css";
+ import Navbar from "../../components/Navbar/Navbar";
+-import InfoAdmin from "../../components/Admin_info_block/infoAdmin";
+-import SalesRevenueChart from "../../components/Admin_info_block/SalesRevenueChart";
++import DashboardShell from "../../components/Dashboard/DashboardShell";
++
+ const Dashboard = () => {
+   return (
+     <div className="p-8 space-y-12">
+       <Navbar />
+-      <InfoAdmin />
+-      {/* <SalesRev/> */}
+-      <SalesRevenueChart/>
++      <DashboardShell />
+     </div>
+   );
+ };
+ 
+-export default Dashboard;
+\ No newline at end of file
++export default Dashboard;
+diff --git a/src/api/api.ts b/src/api/api.ts
+index f7a2d6a..3a2bcfb 100644
+--- a/src/api/api.ts
++++ b/src/api/api.ts
+@@ -34,4 +34,20 @@ api.interceptors.request.use((config) => {
+   return config;
+ });
+ 
++api.interceptors.response.use(
++  (response) => response,
++  (error) => {
++    if (error.response?.status === 401) {
++      localStorage.removeItem("token");
++      localStorage.removeItem("role");
++      localStorage.removeItem("user");
++      localStorage.removeItem("tenant");
++      if (window.location.pathname !== "/login") {
++        window.location.href = "/login";
++      }
++    }
++    return Promise.reject(error);
++  }
++);
++
+ export default api;
+diff --git a/src/api/dashboardAPI.ts b/src/api/dashboardAPI.ts
+new file mode 100644
+index 0000000..b7b99af
+--- /dev/null
++++ b/src/api/dashboardAPI.ts
+@@ -0,0 +1,7 @@
++import api from "./api";
++import type { DashboardResponse } from "../types/dashboard";
++
++export async function fetchDashboard(): Promise<DashboardResponse> {
++  const { data } = await api.get<DashboardResponse>("/dashboard");
++  return data;
++}
+diff --git a/src/components/Admin_info_block/SalesRevenueChart.tsx b/src/components/Admin_info_block/SalesRevenueChart.tsx
+index 33eeda2..c3a2bd4 100644
+--- a/src/components/Admin_info_block/SalesRevenueChart.tsx
++++ b/src/components/Admin_info_block/SalesRevenueChart.tsx
+@@ -20,7 +20,13 @@ import Lead_icon_2 from "../../assets/images/icon_2.svg";
+ import Lead_icon_3 from "../../assets/images/icon_3.svg";
+ import Lead_icon_4 from "../../assets/images/icon_4.svg";
+ 
+-import type { TooltipProps } from "recharts"; // ✅ type-only import
++import type { TooltipProps } from "recharts";
++import type {
++  DashboardAgentRow,
++  DashboardLeadStats,
++  DashboardPaymentStats,
++  DashboardTrendPoint,
++} from "../../types/dashboard";
+ 
+ interface CustomTooltipProps extends TooltipProps<number, string> {
+   active?: boolean;
+@@ -47,37 +53,40 @@ const CustomTooltip: React.FC<CustomTooltipProps> = ({
+   return null;
+ };
+ 
+-const data = [
+-  { month: "January", totalSales: 80000, revenue: 50000 },
+-  { month: "February", totalSales: 70000, revenue: 90000 },
+-  { month: "March", totalSales: 90000, revenue: 120000 },
+-  { month: "April", totalSales: 75000, revenue: 70000 },
+-  { month: "May", totalSales: 95000, revenue: 95000 },
+-  { month: "June", totalSales: 70000, revenue: 130000 },
+-  { month: "July", totalSales: 80000, revenue: 100000 },
+-  { month: "August", totalSales: 85000, revenue: 60000 },
+-  { month: "September", totalSales: 120000, revenue: 110000 },
+-  { month: "October", totalSales: 100000, revenue: 180000 },
+-  { month: "November", totalSales: 120000, revenue: 80000 },
+-  { month: "Descember", totalSales: 130000, revenue: 120000 },
+-];
++type ChartProps = {
++  leads?: DashboardLeadStats;
++  trend?: DashboardTrendPoint[];
++  agents?: DashboardAgentRow[];
++  payments?: DashboardPaymentStats;
++};
+ 
+-const BookingData = [
+-  { name: "Sameer", bookings: 340 },
+-  { name: "Samra", bookings: 460 },
+-  { name: "Omar", bookings: 220 },
+-  { name: "Bilal", bookings: 450 },
+-  { name: "Zain", bookings: 280 },
+-  { name: "Fatima", bookings: 330 },
+-  { name: "Usman", bookings: 480 },
+-];
++export default function SalesRevenueChart({
++  leads,
++  trend = [],
++  agents = [],
++  payments,
++}: ChartProps) {
++  const chartTrend = trend.length
++    ? trend
++    : [{ month: "", label: "No data", count: 0 }];
++  const data = chartTrend.map((t) => ({
++    month: t.label,
++    totalSales: t.count,
++    revenue: payments?.approved_amount
++      ? Math.round(payments.approved_amount / Math.max(chartTrend.length, 1))
++      : t.count,
++  }));
+ 
+-const Progress1 = 35;
+-const Progress2 = 65;
+-const Progress3 = 87;
+-const Progress4 = 2;
++  const BookingData = agents.map((a) => ({
++    name: a.name,
++    bookings: a.booked,
++  }));
+ 
+-export default function SalesRevenueChart() {
++  const totalLeads = leads?.total || 1;
++  const Progress1 = Math.min(100, Math.round(((leads?.by_status.new ?? 0) / totalLeads) * 100));
++  const Progress2 = Math.min(100, Math.round(((leads?.by_status.open ?? 0) / totalLeads) * 100));
++  const Progress3 = Math.min(100, Math.round(((leads?.by_status.booked ?? 0) / totalLeads) * 100));
++  const Progress4 = Math.min(100, Math.round(((leads?.by_status.archive ?? 0) / totalLeads) * 100));
+   return (
+     <div className="">
+       <div className="grid grid-cols-12 gap-5">
+@@ -208,7 +217,7 @@ export default function SalesRevenueChart() {
+               </h2>
+               <div className="flex items-center justify-start gap-3 mt-3">
+                 <p className="justify-start text-black text-2xl font-semibold font-['Poppins'] leading-loose">
+-                  3,671
++                  {(leads?.by_status.new ?? 0).toLocaleString()}
+                 </p>
+                 <div className="flex items-center justify-center gap-2 px-3 py-2 bg-green-100 rounded-lg w-fit">
+                   <img src={Profit} alt="Profit" className="w-4 h-4" />
+@@ -252,7 +261,7 @@ export default function SalesRevenueChart() {
+               </h2>
+               <div className="flex items-center justify-start gap-3 mt-3">
+                 <p className="justify-start text-black text-2xl font-semibold font-['Poppins'] leading-loose">
+-                  4,671
++                  {(leads?.by_status.open ?? 0).toLocaleString()}
+                 </p>
+                 <div className="flex items-center justify-center gap-2 px-3 py-2 bg-green-100 rounded-lg w-fit">
+                   <img src={Profit} alt="Profit" className="w-4 h-4" />
+@@ -292,23 +301,17 @@ export default function SalesRevenueChart() {
+                 />
+               </div>
+               <h2 className="self-stretch justify-start text-Normal-Color text-base font-normal font-['Poppins'] mt-4">
+-                New Leads
++                Booked Leads
+               </h2>
+               <div className="flex items-center justify-start gap-3 mt-3">
+                 <p className="justify-start text-black text-2xl font-semibold font-['Poppins'] leading-loose">
+-                  3,671
++                  {(leads?.by_status.booked ?? 0).toLocaleString()}
+                 </p>
+-                <div className="flex items-center justify-center gap-2 px-3 py-2 bg-green-100 rounded-lg w-fit">
+-                  <img src={Profit} alt="Profit" className="w-4 h-4" />
+-                  <span className="text-green-800 text-xs font-semibold font-['Poppins']">
+-                    +11.2%
+-                  </span>
+-                </div>
+               </div>
+               <div className="mt-5">
+                 <div className="flex justify-between items-center mb-1">
+                   <p className="text-Normal-Color text-[10px] font-normal font-['Inter'] leading-none">
+-                    Progress
++                    Share
+                   </p>
+                   <p className="text-Normal-Color text-[10px] font-normal font-['Inter'] leading-none">
+                     {Progress3}%
+@@ -340,7 +343,7 @@ export default function SalesRevenueChart() {
+               </h2>
+               <div className="flex items-center justify-start gap-3 mt-3">
+                 <p className="justify-start text-black text-2xl font-semibold font-['Poppins'] leading-loose">
+-                  3,671
++                  {(leads?.by_status.archive ?? 0).toLocaleString()}
+                 </p>
+                 <div className="flex items-center justify-center gap-2 px-3 py-2 bg-red-100 rounded-lg w-fit">
+                   <img src={Loss} alt="Loss" className="w-4 h-4" />
+diff --git a/src/components/Admin_info_block/infoAdmin.tsx b/src/components/Admin_info_block/infoAdmin.tsx
+index b27cc5d..e9eadfc 100644
+--- a/src/components/Admin_info_block/infoAdmin.tsx
++++ b/src/components/Admin_info_block/infoAdmin.tsx
+@@ -1,9 +1,29 @@
+ import bookedFolder from "../../assets/images/booked_folder.svg";
+ import invoiceFolder from "../../assets/images/invoice_folder.svg";
+ import requetedFolder from "../../assets/images/request_folder.svg";
+-// import invoicePink from "../../assets/images/invoice_pink.svg";
++import type {
++  DashboardFolderStats,
++  DashboardPaymentStats,
++} from "../../types/dashboard";
++
++type Props = {
++  folders?: DashboardFolderStats;
++  payments?: DashboardPaymentStats;
++};
++
++const infoAdmin = ({ folders, payments }: Props) => {
++  const byInvoice = folders?.by_invoice_status ?? {};
++  const invoiceKeys = Object.keys(byInvoice);
++  const bookedCount = folders?.total ?? 0;
++  const invoiceCount =
++    invoiceKeys.length > 0
++      ? Number(byInvoice[invoiceKeys[0]] ?? 0)
++      : payments?.approved_count ?? 0;
++  const requestCount =
++    invoiceKeys.length > 1
++      ? Number(byInvoice[invoiceKeys[1]] ?? 0)
++      : payments?.pending_count ?? 0;
+ 
+-const infoAdmin = () => {
+   return (
+     <div>
+       <h2 className="self-stretch justify-start text-black text-2xl font-medium font-['Poppins'] leading-tight">
+@@ -14,17 +34,14 @@ const infoAdmin = () => {
+         <div className="bg-gradient-to-r from-stone-300 to-neutral-400 rounded-xl border border-neutral-200 p-6">
+           <div className="flex justify-between items-center">
+             <div className="w-14 h-14 bg-white/10 rounded-lg flex items-center justify-center">
+-              <div className="w-5 h-4 bg-subheading-color">
+-                {" "}
+-                <img src={bookedFolder} alt="booked Folder" />
+-              </div>
++              <img src={bookedFolder} alt="booked Folder" />
+             </div>
+             <div>
+-              <h2 className="self-stretch justify-start text-stone-700 text-xl font-normal font-['Poppins']">
+-                Booked Folders
++              <h2 className="text-stone-700 text-xl font-normal font-['Poppins']">
++                Total Folders
+               </h2>
+-              <p className="self-stretch justify-start text-zinc-900 text-2xl font-semibold font-['Poppins'] mt-1">
+-                3174
++              <p className="text-zinc-900 text-2xl font-semibold font-['Poppins'] mt-1">
++                {bookedCount.toLocaleString()}
+               </p>
+             </div>
+           </div>
+@@ -33,17 +50,14 @@ const infoAdmin = () => {
+         <div className="bg-gradient-to-r from-amber-100 to-orange-200 rounded-xl border border-neutral-200 p-6">
+           <div className="flex justify-between items-center">
+             <div className="w-14 h-14 bg-white/10 rounded-lg flex items-center justify-center">
+-              <div className="w-5 h-4 bg-subheading-color">
+-                {" "}
+-                <img src={invoiceFolder} alt="invoice Folder" />
+-              </div>
++              <img src={invoiceFolder} alt="invoice Folder" />
+             </div>
+             <div>
+-              <h2 className="self-stretch justify-start text-stone-700 text-xl font-normal font-['Poppins']">
+-                Invoice Folders
++              <h2 className="text-stone-700 text-xl font-normal font-['Poppins']">
++                Approved Payments
+               </h2>
+-              <p className="self-stretch justify-start text-zinc-900 text-2xl font-semibold font-['Poppins'] mt-1">
+-                3174
++              <p className="text-zinc-900 text-2xl font-semibold font-['Poppins'] mt-1">
++                {invoiceCount.toLocaleString()}
+               </p>
+             </div>
+           </div>
+@@ -52,40 +66,18 @@ const infoAdmin = () => {
+         <div className="bg-gradient-to-r from-emerald-200 to-teal-300 rounded-xl border border-neutral-200 p-6">
+           <div className="flex justify-between items-center">
+             <div className="w-14 h-14 bg-white/10 rounded-lg flex items-center justify-center">
+-              <div className="w-5 h-5 bg-subheading-color">
+-                {" "}
+-                <img src={requetedFolder} alt="requeted Folder" />
+-              </div>
++              <img src={requetedFolder} alt="request Folder" />
+             </div>
+             <div>
+-              <h2 className="self-stretch justify-start text-stone-700 text-xl font-normal font-['Poppins']">
+-                Invoiced Request Folders
++              <h2 className="text-stone-700 text-xl font-normal font-['Poppins']">
++                Pending Payments
+               </h2>
+-              <p className="self-stretch justify-start text-zinc-900 text-2xl font-semibold font-['Poppins'] mt-1">
+-                3174
++              <p className="text-zinc-900 text-2xl font-semibold font-['Poppins'] mt-1">
++                {requestCount.toLocaleString()}
+               </p>
+             </div>
+           </div>
+         </div>
+-
+-        {/* <div className="bg-gradient-to-r from-pink-300 to-rose-300 rounded-xl border border-neutral-200 p-6">
+-          <div className="flex justify-between items-center">
+-            <div className="w-14 h-14 bg-white/10 rounded-lg flex items-center justify-center">
+-              <div className="w-5 h-5 bg-subheading-color">
+-                {" "}
+-                <img src={invoicePink} alt="requeted Folder" />
+-              </div>
+-            </div>
+-            <div>
+-              <h2 className="self-stretch justify-start text-stone-700 text-xl font-normal font-['Poppins']">
+-                Invoice Folders
+-              </h2>
+-              <p className="self-stretch justify-start text-zinc-900 text-2xl font-semibold font-['Poppins'] mt-1">
+-                3174
+-              </p>
+-            </div>
+-          </div>
+-        </div> */}
+       </div>
+     </div>
+   );
+diff --git a/src/components/Dashboard/DashboardShell.tsx b/src/components/Dashboard/DashboardShell.tsx
+new file mode 100644
+index 0000000..600bf9e
+--- /dev/null
++++ b/src/components/Dashboard/DashboardShell.tsx
+@@ -0,0 +1,49 @@
++import { Spinner } from "flowbite-react";
++import InfoAdmin from "../Admin_info_block/infoAdmin";
++import SalesRevenueChart from "../Admin_info_block/SalesRevenueChart";
++import { useDashboard } from "../../hooks/useDashboard";
++
++type Props = {
++  showCharts?: boolean;
++};
++
++export default function DashboardShell({ showCharts = true }: Props) {
++  const { data, loading, error, reload } = useDashboard();
++
++  if (loading) {
++    return (
++      <div className="flex justify-center py-20">
++        <Spinner size="xl" />
++      </div>
++    );
++  }
++
++  if (error || !data) {
++    return (
++      <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-red-800">
++        <p>{error || "Dashboard unavailable"}</p>
++        <button
++          type="button"
++          className="mt-3 text-sm underline"
++          onClick={() => reload()}
++        >
++          Retry
++        </button>
++      </div>
++    );
++  }
++
++  return (
++    <>
++      <InfoAdmin folders={data.folders} payments={data.payments} />
++      {showCharts && (
++        <SalesRevenueChart
++          leads={data.leads}
++          trend={data.trend}
++          agents={data.agents}
++          payments={data.payments}
++        />
++      )}
++    </>
++  );
++}
+diff --git a/src/components/Login/Login.tsx b/src/components/Login/Login.tsx
+index d4cc52d..66a032c 100644
+--- a/src/components/Login/Login.tsx
++++ b/src/components/Login/Login.tsx
+@@ -2,16 +2,15 @@ import { Button, Checkbox, Label, TextInput } from "flowbite-react";
+ import { useEffect, useState } from "react";
+ import { useNavigate } from "react-router-dom";
+ import Swal from "sweetalert2";
+-import axios from "axios";
+ import Logo from "../../assets/images/adroit-logo.png";
+ import Cookies from "js-cookie";
+ import { ForgerPassAPI } from "../../api/ForgetPassword";
+ import { ResetPass } from "../../api/ResetPassword";
+ import { HiEye, HiEyeOff } from "react-icons/hi";
+ import api, { rootApi } from "../../api/api";
++import { routePrefixForUtype, storageRoleFromUtype } from "../../utils/role";
+ 
+ const Login = () => {
+-    const API_URL = "https://api.haqtravels.co.uk/api/v1/login";
+     const [errors, setErrors] = useState<Record<string, string>>({});
+ 
+     const [email, setEmail] = useState("");
+@@ -57,8 +56,11 @@ const Login = () => {
+                 const { token, user } = response.data;
+ 
+                 localStorage.setItem("token", token);
+-                localStorage.setItem("role", user.utype);
++                localStorage.setItem("role", storageRoleFromUtype(user.utype));
+                 localStorage.setItem("user", JSON.stringify(user));
++                if (response.data.tenant) {
++                    localStorage.setItem("tenant", JSON.stringify(response.data.tenant));
++                }
+ 
+                 if (rememberMe) {
+                     Cookies.set("remember_email", email, { expires: 7 });
+@@ -68,21 +70,11 @@ const Login = () => {
+                     Cookies.remove("remember_password");
+                 }
+ 
+-                switch (user.utype) {
+-                    case "sadmin":
+-                        navigate("/admin");
+-                        break;
+-                    case "agent":
+-                        navigate("/agent");
+-                        break;
+-                    case "accountdepartment":
+-                        navigate("/accountdepartment");
+-                        break;
+-                    case "cadmin":
+-                        navigate("/manager");
+-                        break;
+-                    default:
+-                        Swal.fire("Access Denied", "Your role is not authorized", "error");
++                const prefix = routePrefixForUtype(user.utype);
++                if (prefix) {
++                    navigate(`/${prefix}`);
++                } else {
++                    Swal.fire("Access Denied", "Your role is not authorized", "error");
+                 }
+             }
+ 
+diff --git a/src/hooks/useDashboard.ts b/src/hooks/useDashboard.ts
+new file mode 100644
+index 0000000..17ff7e9
+--- /dev/null
++++ b/src/hooks/useDashboard.ts
+@@ -0,0 +1,35 @@
++import { useCallback, useEffect, useState } from "react";
++import { fetchDashboard } from "../api/dashboardAPI";
++import type { DashboardData } from "../types/dashboard";
++
++export function useDashboard() {
++  const [data, setData] = useState<DashboardData | null>(null);
++  const [loading, setLoading] = useState(true);
++  const [error, setError] = useState<string | null>(null);
++
++  const load = useCallback(async () => {
++    setLoading(true);
++    setError(null);
++    try {
++      const res = await fetchDashboard();
++      if (res.status && res.data) {
++        setData(res.data);
++      } else {
++        setError("Could not load dashboard");
++      }
++    } catch (e: unknown) {
++      const msg =
++        (e as { response?: { data?: { message?: string } } })?.response?.data
++          ?.message || "Failed to load dashboard";
++      setError(msg);
++    } finally {
++      setLoading(false);
++    }
++  }, []);
++
++  useEffect(() => {
++    load();
++  }, [load]);
++
++  return { data, loading, error, reload: load };
++}
+diff --git a/src/types/dashboard.ts b/src/types/dashboard.ts
+new file mode 100644
+index 0000000..28983ea
+--- /dev/null
++++ b/src/types/dashboard.ts
+@@ -0,0 +1,65 @@
++export interface DashboardLeadStats {
++  total: number;
++  by_status: {
++    new: number;
++    open: number;
++    booked: number;
++    not_booked: number;
++    archive: number;
++  };
++  today: number;
++  this_week: number;
++  this_month: number;
++  conversion_rate: number;
++}
++
++export interface DashboardFolderStats {
++  total: number;
++  total_sell: number;
++  total_cost: number;
++  total_commission: number;
++  total_remaining: number;
++  by_invoice_status: Record<string, number>;
++}
++
++export interface DashboardPaymentStats {
++  total_amount: number;
++  approved_amount: number;
++  pending_amount: number;
++  total_count: number;
++  approved_count: number;
++  pending_count: number;
++}
++
++export interface DashboardTrendPoint {
++  month: string;
++  label: string;
++  count: number;
++}
++
++export interface DashboardAgentRow {
++  agent_id: number;
++  name: string;
++  email: string;
++  total: number;
++  booked: number;
++  conversion: number;
++}
++
++export interface DashboardData {
++  leads: DashboardLeadStats;
++  folders: DashboardFolderStats;
++  payments: DashboardPaymentStats;
++  trend: DashboardTrendPoint[];
++  agents: DashboardAgentRow[];
++  recent: Array<Record<string, unknown>>;
++  pipeline: {
++    funnel: unknown;
++    sla_breaches_count: number;
++  } | null;
++}
++
++export interface DashboardResponse {
++  status: boolean;
++  data: DashboardData;
++}
+diff --git a/src/utils/role.ts b/src/utils/role.ts
+new file mode 100644
+index 0000000..8d4240c
+--- /dev/null
++++ b/src/utils/role.ts
+@@ -0,0 +1,25 @@
++/** Map API `utype` to frontend route prefix. */
++export function routePrefixForUtype(utype: string): string | null {
++  const normalized = (utype || "").toLowerCase();
++  switch (normalized) {
++    case "sadmin":
++      return "admin";
++    case "cadmin":
++      return "manager";
++    case "agent":
++      return "agent";
++    case "accountdepartment":
++    case "accountant":
++      return "accountdepartment";
++    default:
++      return null;
++  }
++}
++
++export function storageRoleFromUtype(utype: string): string {
++  const normalized = (utype || "").toLowerCase();
++  if (normalized === "accountant") {
++    return "accountdepartment";
++  }
++  return utype;
++}
+diff --git a/yarn.lock b/yarn.lock
+index e92311d..9b18fcd 100644
+--- a/yarn.lock
++++ b/yarn.lock
+@@ -170,10 +170,10 @@
+     "@babel/helper-string-parser" "^7.27.1"
+     "@babel/helper-validator-identifier" "^7.27.1"
+ 
+-"@esbuild/win32-x64@0.25.12":
++"@esbuild/linux-x64@0.25.12":
+   version "0.25.12"
+-  resolved "https://registry.npmjs.org/@esbuild/win32-x64/-/win32-x64-0.25.12.tgz"
+-  integrity sha512-alJC0uCZpTFrSL0CCDjcgleBXPnCrEAhTBILpeAp7M/OFgoqtAetfBzX0xM00MUsVVPpVjlPuMbREqnZCXaTnA==
++  resolved "https://registry.npmjs.org/@esbuild/linux-x64/-/linux-x64-0.25.12.tgz"
++  integrity sha512-uqZMTLr/zR/ed4jIGnwSLkaHmPjOjJvnm6TVVitAa08SLS9Z0VM8wIRx7gWbJB5/J54YuIMInDquWyYvQLZkgw==
+ 
+ "@eslint-community/eslint-utils@^4.7.0", "@eslint-community/eslint-utils@^4.8.0":
+   version "4.9.0"
+@@ -433,15 +433,15 @@
+     estree-walker "^2.0.2"
+     picomatch "^4.0.2"
+ 
+-"@rollup/rollup-win32-x64-gnu@4.52.3":
++"@rollup/rollup-linux-x64-gnu@4.52.3":
+   version "4.52.3"
+-  resolved "https://registry.npmjs.org/@rollup/rollup-win32-x64-gnu/-/rollup-win32-x64-gnu-4.52.3.tgz"
+-  integrity sha512-s0hybmlHb56mWVZQj8ra9048/WZTPLILKxcvcq+8awSZmyiSUZjjem1AhU3Tf4ZKpYhK4mg36HtHDOe8QJS5PQ==
++  resolved "https://registry.npmjs.org/@rollup/rollup-linux-x64-gnu/-/rollup-linux-x64-gnu-4.52.3.tgz"
++  integrity sha512-tPgGd6bY2M2LJTA1uGq8fkSPK8ZLYjDjY+ZLK9WHncCnfIz29LIXIqUgzCR0hIefzy6Hpbe8Th5WOSwTM8E7LA==
+ 
+-"@rollup/rollup-win32-x64-msvc@4.52.3":
++"@rollup/rollup-linux-x64-musl@4.52.3":
+   version "4.52.3"
+-  resolved "https://registry.npmjs.org/@rollup/rollup-win32-x64-msvc/-/rollup-win32-x64-msvc-4.52.3.tgz"
+-  integrity sha512-zGIbEVVXVtauFgl3MRwGWEN36P5ZGenHRMgNw88X5wEhEBpq0XrMEZwOn07+ICrwM17XO5xfMZqh0OldCH5VTA==
++  resolved "https://registry.npmjs.org/@rollup/rollup-linux-x64-musl/-/rollup-linux-x64-musl-4.52.3.tgz"
++  integrity sha512-BCFkJjgk+WFzP+tcSMXq77ymAPIxsX9lFJWs+2JzuZTLtksJ2o5hvgTdIcZ5+oKzUDMwI0PfWzRBYAydAHF2Mw==
+ 
+ "@standard-schema/spec@^1.0.0":
+   version "1.0.0"
