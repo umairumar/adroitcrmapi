@@ -14,9 +14,27 @@ use App\Models\User;
 use App\Models\CrmFolders;
 use App\Services\UmrahPackagePdfParser;
 use App\Services\PdfOcrService;
+use App\Services\Integrations\WebhookDispatcher;
 
 class FoldersController extends Controller
 {
+    private function dispatchBookingWebhook(CrmFolders $folder, string $event): void
+    {
+        if (! $folder->tenant_id) {
+            return;
+        }
+
+        app(WebhookDispatcher::class)->dispatch((int) $folder->tenant_id, $event, [
+            'id' => $folder->id,
+            'destination' => $folder->destination,
+            'travel_date' => $folder->travel_date,
+            'sell' => $folder->sell,
+            'remaining' => $folder->remaining,
+            'booking_status' => $folder->booking_status ?? null,
+            'company' => $folder->company,
+        ]);
+    }
+
     private function cleanUtf8(mixed $value): mixed
     {
         if (is_array($value)) {
@@ -167,6 +185,9 @@ class FoldersController extends Controller
                 
                 return $folder;
             });
+
+            $folder->refresh();
+            $this->dispatchBookingWebhook($folder, 'booking.created');
             
             return response()->json([
                     'status'  => true,
@@ -235,6 +256,8 @@ class FoldersController extends Controller
             return CrmFolders::with(['itineraries', 'passengers', 'passengersNames', 'hotels', 'transport', 'others', 'payments'])
                 ->findOrFail($id);
         });
+
+        $this->dispatchBookingWebhook($updatedFolder, 'booking.updated');
 
         return response()->json(['status' => true, 'message' => 'Folder updated', 'data' => $updatedFolder]);
     }

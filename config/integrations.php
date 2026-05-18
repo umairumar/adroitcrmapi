@@ -26,7 +26,7 @@ return [
         'hotelbeds' => [
             'name' => 'Hotelbeds',
             'type' => 'ota_hotel',
-            'credential_fields' => ['api_key', 'secret'],
+            'credential_fields' => ['api_key', 'secret', 'environment'],
         ],
         'booking_com' => [
             'name' => 'Booking.com Partner',
@@ -45,6 +45,28 @@ return [
         'primary_color' => '#0f766e',
         'secondary_color' => '#134e4a',
         'accent_color' => '#14b8a6',
+    ],
+
+    'amadeus' => [
+        'test_base_url' => env('AMADEUS_TEST_URL', 'https://test.api.amadeus.com'),
+        'production_base_url' => env('AMADEUS_PRODUCTION_URL', 'https://api.amadeus.com'),
+    ],
+
+    'hotelbeds' => [
+        'test_base_url' => env('HOTELBEDS_TEST_URL', 'https://api.test.hotelbeds.com'),
+        'production_base_url' => env('HOTELBEDS_PRODUCTION_URL', 'https://api.hotelbeds.com'),
+    ],
+
+    'webhooks' => [
+        'events' => [
+            'lead.created',
+            'lead.updated',
+            'booking.created',
+            'booking.updated',
+            'payment.approved',
+        ],
+        'max_attempts' => 5,
+        'retry_minutes' => [1, 5, 15, 60, 240],
     ],
 
 ];

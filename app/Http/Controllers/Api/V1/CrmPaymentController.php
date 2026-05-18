@@ -12,6 +12,7 @@ use App\Models\CrmPayment;
 use App\Services\Auth\AuthorizationService;
 use App\Services\Operations\DepositService;
 use App\Services\Finance\FinanceIntegrationService;
+use App\Services\Integrations\WebhookDispatcher;
 
 class CrmPaymentController extends Controller
 {
@@ -19,6 +20,7 @@ class CrmPaymentController extends Controller
         private readonly AuthorizationService $authz,
         private readonly DepositService $deposits,
         private readonly FinanceIntegrationService $finance,
+        private readonly WebhookDispatcher $webhooks,
     ) {}
 
     private function requireAccountant(Request $request)
@@ -284,6 +286,17 @@ class CrmPaymentController extends Controller
             $payment = $payment->fresh();
             $this->deposits->allocatePayment($payment, $payment->booking_deposit_id);
             $this->finance->onPaymentApproved($payment);
+
+            if ($payment->tenant_id) {
+                $this->webhooks->dispatch((int) $payment->tenant_id, 'payment.approved', [
+                    'id' => $payment->id,
+                    'folder_id' => $payment->folder_id,
+                    'amount' => $payment->payment,
+                    'status' => $payment->status,
+                    'payment_mode' => $payment->payment_mode,
+                    'pdate' => $payment->pdate,
+                ]);
+            }
         }
 
         return response()->json([

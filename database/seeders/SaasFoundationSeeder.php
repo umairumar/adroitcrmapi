@@ -54,6 +54,7 @@ class SaasFoundationSeeder extends Seeder
             ['name' => 'Manage white label', 'slug' => 'white_label.manage', 'module' => 'integrations'],
             ['name' => 'View marketplace', 'slug' => 'marketplace.view', 'module' => 'integrations'],
             ['name' => 'Manage marketplace', 'slug' => 'marketplace.manage', 'module' => 'integrations'],
+            ['name' => 'Manage webhooks', 'slug' => 'webhooks.manage', 'module' => 'integrations'],
         ];
 
         foreach ($permissions as $perm) {
@@ -87,6 +88,7 @@ class SaasFoundationSeeder extends Seeder
                     'loyalty.view', 'loyalty.manage',
                     'integrations.view', 'integrations.manage', 'white_label.manage',
                     'marketplace.view', 'marketplace.manage',
+                    'webhooks.manage',
                 ],
             ],
             'agent' => [

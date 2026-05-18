@@ -48,6 +48,8 @@ use App\Http\Controllers\Api\V1\WhiteLabelController;
 use App\Http\Controllers\Api\V1\TenantIntegrationController;
 use App\Http\Controllers\Api\V1\MarketplaceController;
 use App\Http\Controllers\Api\V1\ExternalApiController;
+use App\Http\Controllers\Api\V1\WebhookEndpointController;
+use App\Http\Controllers\Api\V1\AppBootstrapController;
 
 Route::prefix('v1')->group(function () {
 
@@ -60,6 +62,9 @@ Route::prefix('v1')->group(function () {
 
     // SaaS: self-service tenant registration
     Route::post('/tenants/register', [TenantRegistrationController::class, 'register']);
+
+    // SPA / mobile bootstrap (tenant slug or custom domain)
+    Route::get('/app/bootstrap', [AppBootstrapController::class, 'show']);
 
     // Public white-label theme for tenant apps
     Route::get('/branding/{slug}', [WhiteLabelController::class, 'publicBranding']);
@@ -338,6 +343,13 @@ Route::prefix('v1')->group(function () {
         Route::post('/marketplace/apps/{slug}/subscribe', [MarketplaceController::class, 'subscribe']);
         Route::post('/marketplace/keys', [MarketplaceController::class, 'issueKey']);
         Route::delete('/marketplace/keys/{id}', [MarketplaceController::class, 'revokeKey']);
+
+        Route::get('/webhooks/events', [WebhookEndpointController::class, 'events']);
+        Route::get('/webhooks/endpoints', [WebhookEndpointController::class, 'index']);
+        Route::post('/webhooks/endpoints', [WebhookEndpointController::class, 'store']);
+        Route::put('/webhooks/endpoints/{id}', [WebhookEndpointController::class, 'update']);
+        Route::delete('/webhooks/endpoints/{id}', [WebhookEndpointController::class, 'destroy']);
+        Route::get('/webhooks/endpoints/{id}/deliveries', [WebhookEndpointController::class, 'deliveries']);
 
         // CRM Folders (bookings)
         Route::get('/folders', [FoldersController::class, 'index']);

@@ -3,11 +3,12 @@
 namespace App\Services\Integrations\Adapters;
 
 use App\Models\TenantIntegration;
+use App\Services\Integrations\Concerns\DecryptsIntegrationCredentials;
 use App\Services\Integrations\Contracts\TravelSearchAdapter;
-use Illuminate\Support\Facades\Crypt;
 
 class StubTravelAdapter implements TravelSearchAdapter
 {
+    use DecryptsIntegrationCredentials;
 
     public function searchFlights(TenantIntegration $integration, array $params): array
     {
@@ -66,16 +67,6 @@ class StubTravelAdapter implements TravelSearchAdapter
 
     public function testConnection(TenantIntegration $integration): bool
     {
-        if (! $integration->credentials) {
-            return false;
-        }
-
-        try {
-            $decoded = json_decode(Crypt::decryptString($integration->credentials), true);
-
-            return is_array($decoded) && $decoded !== [];
-        } catch (\Throwable) {
-            return false;
-        }
+        return $this->credentials($integration) !== [];
     }
 }

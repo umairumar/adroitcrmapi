@@ -6,6 +6,7 @@ use App\Models\Contact;
 use App\Models\CrmLead;
 use App\Models\ReferralCode;
 use App\Services\Engagement\LoyaltyService;
+use App\Services\Integrations\WebhookDispatcher;
 use Illuminate\Http\Request;
 
 class LeadCaptureService
@@ -13,6 +14,7 @@ class LeadCaptureService
     public function __construct(
         private readonly PipelineService $pipeline,
         private readonly LoyaltyService $loyalty,
+        private readonly WebhookDispatcher $webhooks,
     ) {}
 
     /**
@@ -111,7 +113,34 @@ class LeadCaptureService
 
         $lead->save();
 
-        return $lead->fresh(['contact', 'pipelineStage']);
+        $fresh = $lead->fresh(['contact', 'pipelineStage']);
+
+        if ($fresh->tenant_id) {
+            $this->webhooks->dispatch(
+                (int) $fresh->tenant_id,
+                $lead->wasRecentlyCreated ? 'lead.created' : 'lead.updated',
+                $this->leadWebhookPayload($fresh),
+            );
+        }
+
+        return $fresh;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function leadWebhookPayload(CrmLead $lead): array
+    {
+        return [
+            'id' => $lead->id,
+            'name' => $lead->name,
+            'email' => $lead->email,
+            'phone' => $lead->phone,
+            'status' => $lead->status,
+            'source' => $lead->source,
+            'pipeline_stage_id' => $lead->pipeline_stage_id,
+            'contact_id' => $lead->contact_id,
+        ];
     }
 
     public function applyReferralCode(CrmLead $lead, string $code): void

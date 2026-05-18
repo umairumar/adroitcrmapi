@@ -4,6 +4,8 @@ namespace App\Services\Integrations;
 
 use App\Models\IntegrationProvider;
 use App\Models\TenantIntegration;
+use App\Services\Integrations\Adapters\AmadeusAdapter;
+use App\Services\Integrations\Adapters\HotelbedsAdapter;
 use App\Services\Integrations\Adapters\StubTravelAdapter;
 use App\Services\Integrations\Contracts\TravelSearchAdapter;
 use Illuminate\Support\Collection;
@@ -12,6 +14,8 @@ class IntegrationRegistry
 {
     public function __construct(
         private readonly StubTravelAdapter $stubAdapter,
+        private readonly AmadeusAdapter $amadeusAdapter,
+        private readonly HotelbedsAdapter $hotelbedsAdapter,
     ) {}
 
     public function listProviders(): Collection
@@ -21,8 +25,11 @@ class IntegrationRegistry
 
     public function adapterFor(TenantIntegration $integration): TravelSearchAdapter
     {
-        // All providers use stub until live Amadeus/Sabre/Hotelbeds SDKs are wired.
-        return $this->stubAdapter;
+        return match ($integration->provider?->slug) {
+            'amadeus' => $this->amadeusAdapter,
+            'hotelbeds' => $this->hotelbedsAdapter,
+            default => $this->stubAdapter,
+        };
     }
 
     public function providerBySlug(string $slug): ?IntegrationProvider
