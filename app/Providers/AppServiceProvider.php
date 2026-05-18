@@ -24,6 +24,11 @@ use App\Services\Finance\FinanceIntegrationService;
 use App\Services\Finance\GeneralLedgerService;
 use App\Services\Finance\RevenueRecognitionService;
 use App\Services\Finance\TaxService;
+use App\Services\Engagement\AnalyticsService;
+use App\Services\Engagement\CampaignService;
+use App\Services\Engagement\LoyaltyService;
+use App\Services\Engagement\MessagingService;
+use App\Services\Engagement\PortalService;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -55,6 +60,11 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(BankReconciliationService::class);
         $this->app->singleton(BudgetService::class);
         $this->app->singleton(FinanceIntegrationService::class);
+        $this->app->singleton(MessagingService::class);
+        $this->app->singleton(CampaignService::class);
+        $this->app->singleton(AnalyticsService::class);
+        $this->app->singleton(PortalService::class);
+        $this->app->singleton(LoyaltyService::class);
     }
 
     /**

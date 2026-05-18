@@ -42,6 +42,13 @@ class SaasFoundationSeeder extends Seeder
             ['name' => 'Manage attendance', 'slug' => 'attendance.manage', 'module' => 'operations'],
             ['name' => 'View finance', 'slug' => 'finance.view', 'module' => 'finance'],
             ['name' => 'Manage finance', 'slug' => 'finance.manage', 'module' => 'finance'],
+            ['name' => 'View inbox', 'slug' => 'inbox.view', 'module' => 'engagement'],
+            ['name' => 'Manage inbox', 'slug' => 'inbox.manage', 'module' => 'engagement'],
+            ['name' => 'Manage campaigns', 'slug' => 'campaigns.manage', 'module' => 'engagement'],
+            ['name' => 'View analytics', 'slug' => 'analytics.view', 'module' => 'engagement'],
+            ['name' => 'Manage B2C portal', 'slug' => 'portal.manage', 'module' => 'engagement'],
+            ['name' => 'View loyalty', 'slug' => 'loyalty.view', 'module' => 'engagement'],
+            ['name' => 'Manage loyalty', 'slug' => 'loyalty.manage', 'module' => 'engagement'],
         ];
 
         foreach ($permissions as $perm) {
@@ -70,6 +77,9 @@ class SaasFoundationSeeder extends Seeder
                     'deposits.manage', 'suppliers.manage', 'receipts.manage',
                     'attendance.view', 'attendance.manage',
                     'finance.view', 'finance.manage',
+                    'inbox.view', 'inbox.manage', 'campaigns.manage',
+                    'analytics.view', 'portal.manage',
+                    'loyalty.view', 'loyalty.manage',
                 ],
             ],
             'agent' => [
@@ -83,6 +93,9 @@ class SaasFoundationSeeder extends Seeder
                     'contacts.view',
                     'deposits.manage',
                     'attendance.view',
+                    'inbox.view', 'inbox.manage',
+                    'analytics.view',
+                    'loyalty.view',
                 ],
             ],
             'accountant' => [

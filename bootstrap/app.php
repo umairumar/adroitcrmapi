@@ -19,6 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'tenant.context' => \App\Http\Middleware\SetTenantContext::class,
             'tenant.active' => \App\Http\Middleware\EnsureTenantIsActive::class,
+            'portal.auth' => \App\Http\Middleware\PortalAuth::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

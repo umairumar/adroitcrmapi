@@ -5,12 +5,14 @@ namespace App\Services\Sales;
 use App\Models\Contact;
 use App\Models\CrmLead;
 use App\Models\ReferralCode;
+use App\Services\Engagement\LoyaltyService;
 use Illuminate\Http\Request;
 
 class LeadCaptureService
 {
     public function __construct(
         private readonly PipelineService $pipeline,
+        private readonly LoyaltyService $loyalty,
     ) {}
 
     /**
@@ -131,5 +133,7 @@ class LeadCaptureService
         $referral->increment('uses_count');
         $lead->referral_code = $code;
         $lead->source = $lead->source ?: 'referral';
+
+        $this->loyalty->rewardReferrer($referral->fresh());
     }
 }

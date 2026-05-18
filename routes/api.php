@@ -37,6 +37,13 @@ use App\Http\Controllers\Api\V1\TaxRateController;
 use App\Http\Controllers\Api\V1\ExchangeRateController;
 use App\Http\Controllers\Api\V1\BudgetController;
 use App\Http\Controllers\Api\V1\BankAccountController;
+use App\Http\Controllers\Api\V1\InboxController;
+use App\Http\Controllers\Api\V1\MessageTemplateController;
+use App\Http\Controllers\Api\V1\CampaignController;
+use App\Http\Controllers\Api\V1\AnalyticsController;
+use App\Http\Controllers\Api\V1\PortalController;
+use App\Http\Controllers\Api\V1\EngagementWebhookController;
+use App\Http\Controllers\Api\V1\LoyaltyController;
 
 Route::prefix('v1')->group(function () {
 
@@ -49,6 +56,19 @@ Route::prefix('v1')->group(function () {
 
     // SaaS: self-service tenant registration
     Route::post('/tenants/register', [TenantRegistrationController::class, 'register']);
+
+    // B2C portal: magic link validation (public)
+    Route::get('/portal/auth/{token}', [PortalController::class, 'auth']);
+
+    // Inbound channel webhooks (optional X-Webhook-Secret header)
+    Route::post('/engagement/webhooks/{channel}', [EngagementWebhookController::class, 'inbound']);
+
+    // B2C portal (token in header or route)
+    Route::middleware(['portal.auth'])->prefix('portal')->group(function () {
+        Route::get('/dashboard', [PortalController::class, 'dashboard']);
+        Route::get('/bookings/{id}', [PortalController::class, 'booking']);
+        Route::post('/feedback', [PortalController::class, 'feedback']);
+    });
 
     Route::middleware(['auth:sanctum', 'tenant.context', 'tenant.active'])->group(function () {
 
@@ -253,6 +273,31 @@ Route::prefix('v1')->group(function () {
         Route::post('/finance/bank-accounts/{id}/import', [BankAccountController::class, 'importCsv']);
         Route::get('/finance/bank-accounts/{id}/reconcile-suggestions', [BankAccountController::class, 'reconcileSuggestions']);
         Route::post('/finance/bank-transactions/{txnId}/reconcile', [BankAccountController::class, 'reconcile']);
+
+        // Phase 4: Engagement (inbox, campaigns, analytics, portal admin, loyalty)
+        Route::get('/inbox', [InboxController::class, 'index']);
+        Route::get('/inbox/{id}', [InboxController::class, 'show']);
+        Route::post('/inbox/{id}/reply', [InboxController::class, 'reply']);
+        Route::post('/inbox/{id}/assign', [InboxController::class, 'assign']);
+
+        Route::get('/message-templates', [MessageTemplateController::class, 'index']);
+        Route::post('/message-templates', [MessageTemplateController::class, 'store']);
+
+        Route::get('/campaigns', [CampaignController::class, 'index']);
+        Route::post('/campaigns', [CampaignController::class, 'store']);
+        Route::post('/campaigns/{id}/launch', [CampaignController::class, 'launch']);
+
+        Route::get('/analytics/funnel', [AnalyticsController::class, 'funnel']);
+        Route::get('/analytics/cohorts', [AnalyticsController::class, 'cohorts']);
+        Route::get('/analytics/ltv', [AnalyticsController::class, 'ltv']);
+        Route::get('/analytics/branches', [AnalyticsController::class, 'branches']);
+        Route::get('/analytics/engagement', [AnalyticsController::class, 'engagement']);
+
+        Route::post('/portal/links', [PortalController::class, 'issueLink']);
+
+        Route::get('/loyalty/contacts/{contactId}/transactions', [LoyaltyController::class, 'transactions']);
+        Route::post('/loyalty/contacts/{contactId}/earn', [LoyaltyController::class, 'earn']);
+        Route::post('/loyalty/contacts/{contactId}/redeem', [LoyaltyController::class, 'redeem']);
 
         // CRM Folders (bookings)
         Route::get('/folders', [FoldersController::class, 'index']);
