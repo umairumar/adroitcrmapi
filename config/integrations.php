@@ -18,20 +18,10 @@ return [
             'type' => 'gds',
             'credential_fields' => ['client_id', 'client_secret', 'environment'],
         ],
-        'sabre' => [
-            'name' => 'Sabre GDS',
-            'type' => 'gds',
-            'credential_fields' => ['username', 'password', 'pcc', 'environment'],
-        ],
         'hotelbeds' => [
             'name' => 'Hotelbeds',
             'type' => 'ota_hotel',
             'credential_fields' => ['api_key', 'secret', 'environment'],
-        ],
-        'booking_com' => [
-            'name' => 'Booking.com Partner',
-            'type' => 'ota_hotel',
-            'credential_fields' => ['affiliate_id', 'api_key'],
         ],
         'expedia' => [
             'name' => 'Expedia Partner',

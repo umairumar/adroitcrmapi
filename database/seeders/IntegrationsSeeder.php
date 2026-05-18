@@ -11,7 +11,7 @@ class IntegrationsSeeder extends Seeder
     public function run(): void
     {
         foreach (config('integrations.providers', []) as $slug => $def) {
-            IntegrationProvider::firstOrCreate(
+            IntegrationProvider::updateOrCreate(
                 ['slug' => $slug],
                 [
                     'name' => $def['name'],
@@ -28,6 +28,8 @@ class IntegrationsSeeder extends Seeder
                 ]
             );
         }
+
+        IntegrationProvider::whereIn('slug', ['sabre', 'booking_com'])->update(['is_active' => false]);
 
         $apps = [
             [
