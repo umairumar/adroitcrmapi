@@ -7,7 +7,7 @@ import Cookies from "js-cookie";
 import { ForgerPassAPI } from "../../api/ForgetPassword";
 import { ResetPass } from "../../api/ResetPassword";
 import { HiEye, HiEyeOff } from "react-icons/hi";
-import api, { rootApi } from "../../api/api";
+import api, { rootApi, usesApiProxy } from "../../api/api";
 import { routePrefixForUtype, storageRoleFromUtype } from "../../utils/role";
 
 const Login = () => {
@@ -51,7 +51,9 @@ const Login = () => {
                 }
 
                 const payload = { email, password };
-                await rootApi.get("/sanctum/csrf-cookie");
+                if (usesApiProxy) {
+                    await rootApi.get("/sanctum/csrf-cookie");
+                }
                 const response = await api.post("/login", payload);
                 const { token, user } = response.data;
 
@@ -120,11 +122,16 @@ const Login = () => {
                 }
             }
         } catch (error: any) {
-            Swal.fire(
-                "Error",
-                error?.response?.data?.message || "Something went wrong",
-                "error"
-            );
+            let message = "Something went wrong";
+            if (!error?.response) {
+                message =
+                    "Cannot reach the API. Check VITE_API_BASE_URL in .env.local and that the API is running.";
+            } else if (error.response?.data?.message) {
+                message = error.response.data.message;
+            } else if (error.response?.status === 419) {
+                message = "Session expired. Refresh the page and try again.";
+            }
+            Swal.fire("Error", message, "error");
         } finally {
             setLoading(false);
         }

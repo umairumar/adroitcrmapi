@@ -1,28 +1,31 @@
 import axios from "axios";
 
 const apiBaseURL = (import.meta.env.VITE_API_BASE_URL as string) || "";
-const rootBaseURL = apiBaseURL
-  ? apiBaseURL.replace(/\/api\/v\d+\/?$/i, "")
-  : "";
 
-export const rootApi = axios.create({
-  baseURL: rootBaseURL,
-  withCredentials: true,
-  xsrfCookieName: "XSRF-TOKEN",
-  xsrfHeaderName: "X-XSRF-TOKEN",
+/** Relative /api path = Vite proxy to local Laravel; use Sanctum cookies + CSRF. */
+export const usesApiProxy = apiBaseURL.startsWith("/");
+
+const rootBaseURL = usesApiProxy
+  ? ""
+  : apiBaseURL.replace(/\/api\/v\d+\/?$/i, "");
+
+const clientDefaults = {
+  withCredentials: usesApiProxy,
+  xsrfCookieName: usesApiProxy ? "XSRF-TOKEN" : undefined,
+  xsrfHeaderName: usesApiProxy ? "X-XSRF-TOKEN" : undefined,
   headers: {
     Accept: "application/json",
   },
+};
+
+export const rootApi = axios.create({
+  baseURL: rootBaseURL,
+  ...clientDefaults,
 });
 
 const api = axios.create({
   baseURL: apiBaseURL,
-  withCredentials: true, // add this
-  xsrfCookieName: "XSRF-TOKEN",
-  xsrfHeaderName: "X-XSRF-TOKEN",
-  headers: {
-    Accept: "application/json",
-  },
+  ...clientDefaults,
 });
 
 // Optional: Authorization token
