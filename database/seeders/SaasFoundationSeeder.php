@@ -32,6 +32,13 @@ class SaasFoundationSeeder extends Seeder
             ['name' => 'Manage sales pipeline', 'slug' => 'pipeline.manage', 'module' => 'pipeline'],
             ['name' => 'View contacts', 'slug' => 'contacts.view', 'module' => 'contacts'],
             ['name' => 'Manage contacts', 'slug' => 'contacts.manage', 'module' => 'contacts'],
+            ['name' => 'View commissions', 'slug' => 'commissions.view', 'module' => 'operations'],
+            ['name' => 'Manage commissions', 'slug' => 'commissions.manage', 'module' => 'operations'],
+            ['name' => 'Manage deposits', 'slug' => 'deposits.manage', 'module' => 'operations'],
+            ['name' => 'Manage suppliers', 'slug' => 'suppliers.manage', 'module' => 'operations'],
+            ['name' => 'Manage receipts', 'slug' => 'receipts.manage', 'module' => 'operations'],
+            ['name' => 'View attendance', 'slug' => 'attendance.view', 'module' => 'operations'],
+            ['name' => 'Manage attendance', 'slug' => 'attendance.manage', 'module' => 'operations'],
         ];
 
         foreach ($permissions as $perm) {
@@ -56,6 +63,9 @@ class SaasFoundationSeeder extends Seeder
                     'dashboard.view', 'tenant.settings',
                     'pipeline.view', 'pipeline.manage',
                     'contacts.view', 'contacts.manage',
+                    'commissions.view', 'commissions.manage',
+                    'deposits.manage', 'suppliers.manage', 'receipts.manage',
+                    'attendance.view', 'attendance.manage',
                 ],
             ],
             'agent' => [
@@ -67,6 +77,8 @@ class SaasFoundationSeeder extends Seeder
                     'dashboard.view',
                     'pipeline.view',
                     'contacts.view',
+                    'deposits.manage',
+                    'attendance.view',
                 ],
             ],
             'accountant' => [
@@ -75,6 +87,8 @@ class SaasFoundationSeeder extends Seeder
                     'folders.view',
                     'payments.view', 'payments.process',
                     'dashboard.view',
+                    'commissions.view', 'deposits.manage',
+                    'receipts.manage',
                 ],
             ],
         ];

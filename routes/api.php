@@ -20,6 +20,14 @@ use App\Http\Controllers\Api\V1\TagController;
 use App\Http\Controllers\Api\V1\SegmentController;
 use App\Http\Controllers\Api\V1\LeadAssignmentRuleController;
 use App\Http\Controllers\Api\V1\ReferralCodeController;
+use App\Http\Controllers\Api\V1\BookingOperationsController;
+use App\Http\Controllers\Api\V1\BookingDepositController;
+use App\Http\Controllers\Api\V1\BookingDocumentController;
+use App\Http\Controllers\Api\V1\CommissionController;
+use App\Http\Controllers\Api\V1\SupplierController;
+use App\Http\Controllers\Api\V1\ExpenseReceiptController;
+use App\Http\Controllers\Api\V1\AttendanceController;
+use App\Http\Controllers\Api\V1\LeaveRequestController;
 
 Route::prefix('v1')->group(function () {
 
@@ -152,6 +160,50 @@ Route::prefix('v1')->group(function () {
         Route::post('/leads/remarks', [LeadRemarkController::class, 'store']);
         Route::put('/leads/remarks/{id}', [LeadRemarkController::class, 'update']);
         Route::delete('/leads/remarks/{id}', [LeadRemarkController::class, 'destroy']);
+
+        // Phase 2: Operations, commissions, deposits, attendance
+        Route::get('/operations/booking-statuses', [BookingOperationsController::class, 'bookingStatuses']);
+        Route::get('/folders/{folderId}/operations', [BookingOperationsController::class, 'summary']);
+        Route::put('/folders/{folderId}/booking-status', [BookingOperationsController::class, 'updateStatus']);
+        Route::post('/folders/{folderId}/link-lead', [BookingOperationsController::class, 'linkLead']);
+        Route::post('/folders/{folderId}/calculate-commissions', [BookingOperationsController::class, 'calculateCommissions']);
+        Route::post('/folders/{folderId}/sync-deposits', [BookingOperationsController::class, 'syncDeposits']);
+
+        Route::get('/folders/{folderId}/deposits', [BookingDepositController::class, 'index']);
+        Route::post('/folders/{folderId}/deposits', [BookingDepositController::class, 'store']);
+
+        Route::get('/folders/{folderId}/documents', [BookingDocumentController::class, 'index']);
+        Route::post('/folders/{folderId}/documents', [BookingDocumentController::class, 'store']);
+        Route::delete('/documents/{id}', [BookingDocumentController::class, 'destroy']);
+
+        Route::get('/commissions/entries', [CommissionController::class, 'entries']);
+        Route::post('/commissions/entries/{id}/approve', [CommissionController::class, 'approveEntry']);
+        Route::get('/commissions/report', [CommissionController::class, 'report']);
+        Route::get('/commissions/staff-rules', [CommissionController::class, 'staffRules']);
+        Route::post('/commissions/staff-rules', [CommissionController::class, 'storeStaffRule']);
+        Route::get('/commissions/supplier-rules', [CommissionController::class, 'supplierRules']);
+        Route::post('/commissions/supplier-rules', [CommissionController::class, 'storeSupplierRule']);
+        Route::get('/commissions/payouts', [CommissionController::class, 'payouts']);
+        Route::post('/commissions/payouts', [CommissionController::class, 'createPayout']);
+        Route::post('/commissions/payouts/{id}/paid', [CommissionController::class, 'markPayoutPaid']);
+
+        Route::get('/suppliers', [SupplierController::class, 'index']);
+        Route::post('/suppliers', [SupplierController::class, 'store']);
+        Route::put('/suppliers/{id}', [SupplierController::class, 'update']);
+
+        Route::get('/receipts', [ExpenseReceiptController::class, 'index']);
+        Route::post('/receipts', [ExpenseReceiptController::class, 'store']);
+        Route::post('/receipts/{id}/review', [ExpenseReceiptController::class, 'approve']);
+
+        Route::post('/attendance/clock-in', [AttendanceController::class, 'clockIn']);
+        Route::post('/attendance/clock-out', [AttendanceController::class, 'clockOut']);
+        Route::get('/attendance/me', [AttendanceController::class, 'myRecords']);
+        Route::get('/attendance/team', [AttendanceController::class, 'teamRecords']);
+        Route::get('/attendance/summary/{userId}', [AttendanceController::class, 'summary']);
+
+        Route::get('/leave-requests', [LeaveRequestController::class, 'index']);
+        Route::post('/leave-requests', [LeaveRequestController::class, 'store']);
+        Route::post('/leave-requests/{id}/review', [LeaveRequestController::class, 'review']);
 
         // CRM Folders (bookings)
         Route::get('/folders', [FoldersController::class, 'index']);

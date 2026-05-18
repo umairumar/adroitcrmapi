@@ -10,11 +10,13 @@ use Carbon\Carbon;
 use App\Models\CrmFolders;
 use App\Models\CrmPayment;
 use App\Services\Auth\AuthorizationService;
+use App\Services\Operations\DepositService;
 
 class CrmPaymentController extends Controller
 {
     public function __construct(
         private readonly AuthorizationService $authz,
+        private readonly DepositService $deposits,
     ) {}
 
     private function requireAccountant(Request $request)
@@ -123,8 +125,13 @@ class CrmPaymentController extends Controller
             $proofPath = 'uploads/proofs/' . $filename;
         }
 
+        $folder = CrmFolders::find($folderId);
+
         $payment = CrmPayment::create([
+            'tenant_id' => $folder?->tenant_id,
             'folder_id' => (int) $folderId,
+            'payment_type' => $request->input('payment_type', 'payment'),
+            'booking_deposit_id' => $request->booking_deposit_id,
             'payment' => $request->payment,
             'pdate' => $request->pdate,
             'payment_mode' => $request->payment_mode,
@@ -271,10 +278,14 @@ class CrmPaymentController extends Controller
             'remarks' => $request->remarks ?? $payment->remarks,
         ]);
 
+        if (strtolower((string) $request->status) === 'approved') {
+            $this->deposits->allocatePayment($payment->fresh(), $payment->booking_deposit_id);
+        }
+
         return response()->json([
             'status' => true,
             'message' => 'Payment processed successfully',
-            'data' => $payment
+            'data' => $payment->fresh()
         ]);
     }
 }

@@ -28,6 +28,13 @@ class AuthorizationService
             'pipeline.manage' => ['leads.manage'],
             'contacts.view' => ['leads.view'],
             'contacts.manage' => ['leads.manage'],
+            'commissions.view' => ['folders.view'],
+            'commissions.manage' => ['folders.manage'],
+            'deposits.manage' => ['folders.manage', 'payments.process'],
+            'suppliers.manage' => ['folders.manage'],
+            'receipts.manage' => ['payments.process'],
+            'attendance.view' => ['users.view'],
+            'attendance.manage' => ['users.manage'],
         ];
 
         foreach ($fallbacks[$permission] ?? [] as $alt) {

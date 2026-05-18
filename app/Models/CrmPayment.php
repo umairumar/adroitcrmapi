@@ -18,6 +18,8 @@ class CrmPayment extends Model
     protected $fillable = [
         'tenant_id',
         'folder_id',
+        'payment_type',
+        'booking_deposit_id',
         'payment',
         'pdate',
         'payment_mode',

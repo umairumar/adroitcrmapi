@@ -10,6 +10,10 @@ use App\Services\Sales\LeadAssignmentService;
 use App\Services\Sales\LeadCaptureService;
 use App\Services\Sales\PipelineService;
 use App\Services\Sales\SegmentService;
+use App\Services\Operations\AttendanceService;
+use App\Services\Operations\BookingOperationsService;
+use App\Services\Operations\CommissionCalculationService;
+use App\Services\Operations\DepositService;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -27,6 +31,10 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(LeadCaptureService::class);
         $this->app->singleton(LeadAssignmentService::class);
         $this->app->singleton(SegmentService::class);
+        $this->app->singleton(CommissionCalculationService::class);
+        $this->app->singleton(DepositService::class);
+        $this->app->singleton(AttendanceService::class);
+        $this->app->singleton(BookingOperationsService::class);
     }
 
     /**
