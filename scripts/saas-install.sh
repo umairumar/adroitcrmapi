@@ -20,11 +20,11 @@ php artisan db:seed --class=SaasFoundationSeeder --force
 php artisan db:seed --class=IntegrationsSeeder --force
 
 echo "==> Backfilling legacy data for multi-tenant..."
-php artisan saas:backfill-tenant --force 2>/dev/null || php artisan saas:backfill-tenant || true
-php artisan saas:assign-roles-from-utype --force 2>/dev/null || php artisan saas:assign-roles-from-utype || true
-php artisan sales:seed-pipeline-stages --force 2>/dev/null || php artisan sales:seed-pipeline-stages || true
-php artisan sales:backfill-pipeline-stages --force 2>/dev/null || php artisan sales:backfill-pipeline-stages || true
-php artisan operations:sync-deposits --force 2>/dev/null || php artisan operations:sync-deposits || true
+php artisan saas:backfill-tenant || true
+php artisan saas:assign-roles-from-utype || true
+php artisan sales:seed-pipeline-stages || true
+php artisan sales:backfill-pipeline-stages || true
+php artisan operations:sync-deposits || true
 
 echo ""
 echo "SaaS API is ready."
