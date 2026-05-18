@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Services\Audit\AuditLogger;
 use App\Services\Auth\BranchAccess;
 use App\Services\Sales\PipelineService;
+use App\Services\Finance\ChartOfAccountsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -22,6 +23,7 @@ class TenantRegistrationController extends Controller
         private readonly AuditLogger $auditLogger,
         private readonly BranchAccess $branchAccess,
         private readonly PipelineService $pipeline,
+        private readonly ChartOfAccountsService $chartOfAccounts,
     ) {}
 
     /**
@@ -115,6 +117,7 @@ class TenantRegistrationController extends Controller
             $this->branchAccess->syncBranchesForUser($user, [$branch->id]);
 
             $this->pipeline->seedDefaultStagesForTenant($tenant->id);
+            $this->chartOfAccounts->seedForTenant($tenant->id);
 
             $token = $user->createToken('crm-token')->plainTextToken;
 

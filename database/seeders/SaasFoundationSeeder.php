@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\Tenant;
+use App\Services\Finance\ChartOfAccountsService;
 use App\Services\Sales\PipelineService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -39,6 +40,8 @@ class SaasFoundationSeeder extends Seeder
             ['name' => 'Manage receipts', 'slug' => 'receipts.manage', 'module' => 'operations'],
             ['name' => 'View attendance', 'slug' => 'attendance.view', 'module' => 'operations'],
             ['name' => 'Manage attendance', 'slug' => 'attendance.manage', 'module' => 'operations'],
+            ['name' => 'View finance', 'slug' => 'finance.view', 'module' => 'finance'],
+            ['name' => 'Manage finance', 'slug' => 'finance.manage', 'module' => 'finance'],
         ];
 
         foreach ($permissions as $perm) {
@@ -66,6 +69,7 @@ class SaasFoundationSeeder extends Seeder
                     'commissions.view', 'commissions.manage',
                     'deposits.manage', 'suppliers.manage', 'receipts.manage',
                     'attendance.view', 'attendance.manage',
+                    'finance.view', 'finance.manage',
                 ],
             ],
             'agent' => [
@@ -89,6 +93,7 @@ class SaasFoundationSeeder extends Seeder
                     'dashboard.view',
                     'commissions.view', 'deposits.manage',
                     'receipts.manage',
+                    'finance.view', 'finance.manage',
                 ],
             ],
         ];
@@ -120,5 +125,6 @@ class SaasFoundationSeeder extends Seeder
         );
 
         app(PipelineService::class)->seedDefaultStagesForTenant($tenant->id);
+        app(ChartOfAccountsService::class)->seedForTenant($tenant->id);
     }
 }

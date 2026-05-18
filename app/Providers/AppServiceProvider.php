@@ -14,6 +14,16 @@ use App\Services\Operations\AttendanceService;
 use App\Services\Operations\BookingOperationsService;
 use App\Services\Operations\CommissionCalculationService;
 use App\Services\Operations\DepositService;
+use App\Services\Finance\AccountsPayableService;
+use App\Services\Finance\AccountsReceivableService;
+use App\Services\Finance\BankReconciliationService;
+use App\Services\Finance\BudgetService;
+use App\Services\Finance\ChartOfAccountsService;
+use App\Services\Finance\ExchangeRateService;
+use App\Services\Finance\FinanceIntegrationService;
+use App\Services\Finance\GeneralLedgerService;
+use App\Services\Finance\RevenueRecognitionService;
+use App\Services\Finance\TaxService;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -35,6 +45,16 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(DepositService::class);
         $this->app->singleton(AttendanceService::class);
         $this->app->singleton(BookingOperationsService::class);
+        $this->app->singleton(ChartOfAccountsService::class);
+        $this->app->singleton(GeneralLedgerService::class);
+        $this->app->singleton(TaxService::class);
+        $this->app->singleton(ExchangeRateService::class);
+        $this->app->singleton(AccountsReceivableService::class);
+        $this->app->singleton(AccountsPayableService::class);
+        $this->app->singleton(RevenueRecognitionService::class);
+        $this->app->singleton(BankReconciliationService::class);
+        $this->app->singleton(BudgetService::class);
+        $this->app->singleton(FinanceIntegrationService::class);
     }
 
     /**

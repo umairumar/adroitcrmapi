@@ -28,6 +28,15 @@ use App\Http\Controllers\Api\V1\SupplierController;
 use App\Http\Controllers\Api\V1\ExpenseReceiptController;
 use App\Http\Controllers\Api\V1\AttendanceController;
 use App\Http\Controllers\Api\V1\LeaveRequestController;
+use App\Http\Controllers\Api\V1\FinanceReportController;
+use App\Http\Controllers\Api\V1\CustomerInvoiceController;
+use App\Http\Controllers\Api\V1\SupplierBillController;
+use App\Http\Controllers\Api\V1\ChartOfAccountController;
+use App\Http\Controllers\Api\V1\JournalEntryController;
+use App\Http\Controllers\Api\V1\TaxRateController;
+use App\Http\Controllers\Api\V1\ExchangeRateController;
+use App\Http\Controllers\Api\V1\BudgetController;
+use App\Http\Controllers\Api\V1\BankAccountController;
 
 Route::prefix('v1')->group(function () {
 
@@ -204,6 +213,46 @@ Route::prefix('v1')->group(function () {
         Route::get('/leave-requests', [LeaveRequestController::class, 'index']);
         Route::post('/leave-requests', [LeaveRequestController::class, 'store']);
         Route::post('/leave-requests/{id}/review', [LeaveRequestController::class, 'review']);
+
+        // Phase 3: Finance (GL, AR, AP, tax, FX, budgets, bank)
+        Route::get('/finance/reports/trial-balance', [FinanceReportController::class, 'trialBalance']);
+        Route::get('/finance/reports/ar-aging', [FinanceReportController::class, 'arAging']);
+        Route::get('/finance/reports/ap-aging', [FinanceReportController::class, 'apAging']);
+        Route::get('/finance/reports/budget-variance', [FinanceReportController::class, 'budgetVariance']);
+
+        Route::get('/finance/chart-of-accounts', [ChartOfAccountController::class, 'index']);
+        Route::post('/finance/chart-of-accounts', [ChartOfAccountController::class, 'store']);
+        Route::post('/finance/chart-of-accounts/seed', [ChartOfAccountController::class, 'seed']);
+
+        Route::get('/finance/journal-entries', [JournalEntryController::class, 'index']);
+        Route::get('/finance/journal-entries/{id}', [JournalEntryController::class, 'show']);
+        Route::post('/finance/journal-entries', [JournalEntryController::class, 'store']);
+
+        Route::get('/finance/invoices', [CustomerInvoiceController::class, 'index']);
+        Route::get('/finance/invoices/{id}', [CustomerInvoiceController::class, 'show']);
+        Route::post('/finance/folders/{folderId}/invoice', [CustomerInvoiceController::class, 'createFromFolder']);
+        Route::post('/finance/invoices/{id}/allocate', [CustomerInvoiceController::class, 'allocate']);
+
+        Route::get('/finance/bills', [SupplierBillController::class, 'index']);
+        Route::post('/finance/bills', [SupplierBillController::class, 'store']);
+        Route::post('/finance/bills/{id}/pay', [SupplierBillController::class, 'pay']);
+
+        Route::get('/finance/tax-rates', [TaxRateController::class, 'index']);
+        Route::post('/finance/tax-rates', [TaxRateController::class, 'store']);
+
+        Route::get('/finance/exchange-rates', [ExchangeRateController::class, 'index']);
+        Route::post('/finance/exchange-rates', [ExchangeRateController::class, 'store']);
+        Route::post('/finance/convert', [ExchangeRateController::class, 'convert']);
+
+        Route::get('/finance/budgets', [BudgetController::class, 'index']);
+        Route::post('/finance/budgets', [BudgetController::class, 'store']);
+
+        Route::get('/finance/bank-accounts', [BankAccountController::class, 'index']);
+        Route::post('/finance/bank-accounts', [BankAccountController::class, 'store']);
+        Route::get('/finance/bank-accounts/{id}/transactions', [BankAccountController::class, 'transactions']);
+        Route::post('/finance/bank-accounts/{id}/import', [BankAccountController::class, 'importCsv']);
+        Route::get('/finance/bank-accounts/{id}/reconcile-suggestions', [BankAccountController::class, 'reconcileSuggestions']);
+        Route::post('/finance/bank-transactions/{txnId}/reconcile', [BankAccountController::class, 'reconcile']);
 
         // CRM Folders (bookings)
         Route::get('/folders', [FoldersController::class, 'index']);

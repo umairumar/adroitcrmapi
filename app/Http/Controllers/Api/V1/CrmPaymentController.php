@@ -11,12 +11,14 @@ use App\Models\CrmFolders;
 use App\Models\CrmPayment;
 use App\Services\Auth\AuthorizationService;
 use App\Services\Operations\DepositService;
+use App\Services\Finance\FinanceIntegrationService;
 
 class CrmPaymentController extends Controller
 {
     public function __construct(
         private readonly AuthorizationService $authz,
         private readonly DepositService $deposits,
+        private readonly FinanceIntegrationService $finance,
     ) {}
 
     private function requireAccountant(Request $request)
@@ -279,7 +281,9 @@ class CrmPaymentController extends Controller
         ]);
 
         if (strtolower((string) $request->status) === 'approved') {
-            $this->deposits->allocatePayment($payment->fresh(), $payment->booking_deposit_id);
+            $payment = $payment->fresh();
+            $this->deposits->allocatePayment($payment, $payment->booking_deposit_id);
+            $this->finance->onPaymentApproved($payment);
         }
 
         return response()->json([
