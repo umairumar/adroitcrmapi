@@ -22,3 +22,6 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Local full-stack dev clone (not part of API repo)
+/adroitsolscrmfront/
