@@ -44,6 +44,10 @@ use App\Http\Controllers\Api\V1\AnalyticsController;
 use App\Http\Controllers\Api\V1\PortalController;
 use App\Http\Controllers\Api\V1\EngagementWebhookController;
 use App\Http\Controllers\Api\V1\LoyaltyController;
+use App\Http\Controllers\Api\V1\WhiteLabelController;
+use App\Http\Controllers\Api\V1\TenantIntegrationController;
+use App\Http\Controllers\Api\V1\MarketplaceController;
+use App\Http\Controllers\Api\V1\ExternalApiController;
 
 Route::prefix('v1')->group(function () {
 
@@ -57,6 +61,12 @@ Route::prefix('v1')->group(function () {
     // SaaS: self-service tenant registration
     Route::post('/tenants/register', [TenantRegistrationController::class, 'register']);
 
+    // Public white-label theme for tenant apps
+    Route::get('/branding/{slug}', [WhiteLabelController::class, 'publicBranding']);
+
+    // API marketplace catalog (public)
+    Route::get('/marketplace/catalog', [MarketplaceController::class, 'catalog']);
+
     // B2C portal: magic link validation (public)
     Route::get('/portal/auth/{token}', [PortalController::class, 'auth']);
 
@@ -68,6 +78,17 @@ Route::prefix('v1')->group(function () {
         Route::get('/dashboard', [PortalController::class, 'dashboard']);
         Route::get('/bookings/{id}', [PortalController::class, 'booking']);
         Route::post('/feedback', [PortalController::class, 'feedback']);
+    });
+
+    // External API (marketplace API keys)
+    Route::middleware(['marketplace.api:leads.read'])->prefix('external')->group(function () {
+        Route::get('/leads', [ExternalApiController::class, 'listLeads']);
+    });
+    Route::middleware(['marketplace.api:leads.write'])->prefix('external')->group(function () {
+        Route::post('/leads', [ExternalApiController::class, 'createLead']);
+    });
+    Route::middleware(['marketplace.api:folders.read'])->prefix('external')->group(function () {
+        Route::get('/folders/{id}', [ExternalApiController::class, 'showFolder']);
     });
 
     Route::middleware(['auth:sanctum', 'tenant.context', 'tenant.active'])->group(function () {
@@ -298,6 +319,25 @@ Route::prefix('v1')->group(function () {
         Route::get('/loyalty/contacts/{contactId}/transactions', [LoyaltyController::class, 'transactions']);
         Route::post('/loyalty/contacts/{contactId}/earn', [LoyaltyController::class, 'earn']);
         Route::post('/loyalty/contacts/{contactId}/redeem', [LoyaltyController::class, 'redeem']);
+
+        // Phase 5: Integrations, white-label, API marketplace
+        Route::get('/white-label', [WhiteLabelController::class, 'show']);
+        Route::put('/white-label', [WhiteLabelController::class, 'update']);
+
+        Route::get('/integrations/providers', [TenantIntegrationController::class, 'providers']);
+        Route::get('/integrations', [TenantIntegrationController::class, 'index']);
+        Route::post('/integrations', [TenantIntegrationController::class, 'store']);
+        Route::put('/integrations/{id}', [TenantIntegrationController::class, 'update']);
+        Route::delete('/integrations/{id}', [TenantIntegrationController::class, 'destroy']);
+        Route::post('/integrations/{id}/test', [TenantIntegrationController::class, 'test']);
+        Route::get('/integrations/{id}/sync-logs', [TenantIntegrationController::class, 'syncLogs']);
+        Route::post('/integrations/search/flights', [TenantIntegrationController::class, 'searchFlights']);
+        Route::post('/integrations/search/hotels', [TenantIntegrationController::class, 'searchHotels']);
+
+        Route::get('/marketplace/subscriptions', [MarketplaceController::class, 'subscriptions']);
+        Route::post('/marketplace/apps/{slug}/subscribe', [MarketplaceController::class, 'subscribe']);
+        Route::post('/marketplace/keys', [MarketplaceController::class, 'issueKey']);
+        Route::delete('/marketplace/keys/{id}', [MarketplaceController::class, 'revokeKey']);
 
         // CRM Folders (bookings)
         Route::get('/folders', [FoldersController::class, 'index']);

@@ -29,6 +29,11 @@ use App\Services\Engagement\CampaignService;
 use App\Services\Engagement\LoyaltyService;
 use App\Services\Engagement\MessagingService;
 use App\Services\Engagement\PortalService;
+use App\Services\Integrations\Adapters\StubTravelAdapter;
+use App\Services\Integrations\IntegrationRegistry;
+use App\Services\Integrations\MarketplaceService;
+use App\Services\Integrations\TenantIntegrationService;
+use App\Services\Integrations\WhiteLabelService;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -65,6 +70,11 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(AnalyticsService::class);
         $this->app->singleton(PortalService::class);
         $this->app->singleton(LoyaltyService::class);
+        $this->app->singleton(StubTravelAdapter::class);
+        $this->app->singleton(IntegrationRegistry::class);
+        $this->app->singleton(TenantIntegrationService::class);
+        $this->app->singleton(WhiteLabelService::class);
+        $this->app->singleton(MarketplaceService::class);
     }
 
     /**

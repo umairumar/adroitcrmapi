@@ -49,6 +49,11 @@ class SaasFoundationSeeder extends Seeder
             ['name' => 'Manage B2C portal', 'slug' => 'portal.manage', 'module' => 'engagement'],
             ['name' => 'View loyalty', 'slug' => 'loyalty.view', 'module' => 'engagement'],
             ['name' => 'Manage loyalty', 'slug' => 'loyalty.manage', 'module' => 'engagement'],
+            ['name' => 'View integrations', 'slug' => 'integrations.view', 'module' => 'integrations'],
+            ['name' => 'Manage integrations', 'slug' => 'integrations.manage', 'module' => 'integrations'],
+            ['name' => 'Manage white label', 'slug' => 'white_label.manage', 'module' => 'integrations'],
+            ['name' => 'View marketplace', 'slug' => 'marketplace.view', 'module' => 'integrations'],
+            ['name' => 'Manage marketplace', 'slug' => 'marketplace.manage', 'module' => 'integrations'],
         ];
 
         foreach ($permissions as $perm) {
@@ -80,6 +85,8 @@ class SaasFoundationSeeder extends Seeder
                     'inbox.view', 'inbox.manage', 'campaigns.manage',
                     'analytics.view', 'portal.manage',
                     'loyalty.view', 'loyalty.manage',
+                    'integrations.view', 'integrations.manage', 'white_label.manage',
+                    'marketplace.view', 'marketplace.manage',
                 ],
             ],
             'agent' => [

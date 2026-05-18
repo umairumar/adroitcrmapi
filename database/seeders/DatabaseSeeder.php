@@ -10,6 +10,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             SaasFoundationSeeder::class,
+            IntegrationsSeeder::class,
         ]);
     }
 }
