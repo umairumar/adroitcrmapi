@@ -1,41 +1,44 @@
 <?php
-namespace App\Http\Controllers\Api\V1; 
+namespace App\Http\Controllers\Api\V1;
 
-use App\Http\Controllers\Controller; 
+use App\Http\Controllers\Controller;
+use App\Models\CrmCompany;
+use App\Services\Auth\AuthorizationService;
+use App\Services\Auth\BranchAccess;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator; 
-use App\Models\CrmCompany; 
-
+use Illuminate\Support\Facades\Validator;
 
 class CrmCompanyController extends Controller
 {
+    public function __construct(
+        private readonly AuthorizationService $authz,
+        private readonly BranchAccess $branchAccess,
+    ) {}
+
     // LIST ALL
     public function index(Request $request)
     {
-            $authUser = $request->user();
+        $authUser = $request->user();
 
-            $crmCompany = CrmCompany::query();
+        $crmCompany = CrmCompany::query();
 
-            if ($authUser->utype === 'sadmin') {
-                // Director → sees all companies
-
-            } elseif ($authUser->utype === 'cadmin') {
-                // Manager → sees ONLY assigned companies
-
-                // Example: "-2-4-" → [2,4]
-                $companyIds = explode('-', trim($authUser->company, '-'));
-
-                $crmCompany->whereIn('id', $companyIds);
-
+        if ($authUser->isPlatformAdmin()) {
+            // all within optional tenant context (middleware)
+        } elseif ($this->authz->canManageCompanies($authUser)) {
+            $branchIds = $this->branchAccess->branchIdsFor($authUser);
+            if ($branchIds !== []) {
+                $crmCompany->whereIn('id', $branchIds);
             } else {
-                // Others → no access
                 $crmCompany->whereRaw('1 = 0');
             }
+        } else {
+            $crmCompany->whereRaw('1 = 0');
+        }
 
-            return response()->json([
-                'success' => true,
-                'data'    => $crmCompany->get()
-            ]);
+        return response()->json([
+            'success' => true,
+            'data'    => $crmCompany->get(),
+        ]);
     }
 
     // INSERT
@@ -73,6 +76,10 @@ class CrmCompanyController extends Controller
             } else {
                 $filename = null;
             }
+
+        if (! $this->authz->canManageCompanies($request->user())) {
+            return response()->json(['status' => false, 'message' => 'Forbidden'], 403);
+        }
 
         $company = CrmCompany::create([
             'title'          => $request->title,

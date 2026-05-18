@@ -9,18 +9,20 @@ use Carbon\Carbon;
 
 use App\Models\CrmFolders;
 use App\Models\CrmPayment;
+use App\Services\Auth\AuthorizationService;
 
 class CrmPaymentController extends Controller
 {
+    public function __construct(
+        private readonly AuthorizationService $authz,
+    ) {}
+
     private function requireAccountant(Request $request)
     {
-        $authUser = $request->user();
-
-        $utype = (string) ($authUser->utype ?? '');
-        if ($utype !== 'Accountant') {
+        if (! $this->authz->canProcessPayments($request->user())) {
             return response()->json([
                 'status' => false,
-                'message' => 'Only Accountant can perform this action'
+                'message' => 'Only users with payment permissions can perform this action',
             ], 403);
         }
 

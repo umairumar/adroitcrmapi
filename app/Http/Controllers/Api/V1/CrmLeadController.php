@@ -2,19 +2,40 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Http\Controllers\Concerns\ScopesLeadQueries;
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\CrmLead;
-
+use App\Models\Tenant;
+use App\Services\Auth\AuthorizationService;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
 class CrmLeadController extends Controller
 {
-    // CREATE DIRECT LEAD
+    use ScopesLeadQueries;
+
+    public function __construct(
+        private readonly AuthorizationService $authz,
+    ) {}
+
+    // CREATE DIRECT LEAD (public; pass tenant_slug to scope lead)
     public function directstore(Request $request)
-    {    
-            $lead = CrmLead::create(array_merge(
+    {
+            $tenantId = null;
+            if ($request->filled('tenant_slug')) {
+                $tenant = Tenant::where('slug', $request->tenant_slug)->where('status', 'active')->first();
+                if (! $tenant) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'Invalid organization.',
+                    ], 422);
+                }
+                $tenantId = $tenant->id;
+            }
+
+            $lead = CrmLead::withoutGlobalScopes()->create(array_merge(
                 [
+                    'tenant_id' => $tenantId,
                     'name'      => $request->name,
                     'email'     => $request->email,
                     'phone'     => $request->phone,
@@ -22,7 +43,7 @@ class CrmLeadController extends Controller
                     'mby'       => $request->mby,
                     'mdate'     => now(),
                     'cby'       => $request->cby,
-                    'cdate'     => now()
+                    'cdate'     => now(),
                 ]
             ));
 
@@ -35,38 +56,10 @@ class CrmLeadController extends Controller
     // LIST NEW LEADS
     public function index(Request $request)
     {
-        $authUser = $request->user();
-
         $perPage = $request->input('per_page', 9);
-        
-        $crmLeads = CrmLead::query();
-        
-        if ($authUser->utype === 'sadmin') {
-                // Director → sees all users (optional: you can also exclude himself if needed)
-        } elseif ($authUser->utype === 'cadmin') {
-            // cadmin sees ONLY agents of same company
-            $companies = explode('-',trim($authUser->company,'-'));
-            $crmLeads->where('mby',$authUser->id) 
-            ->where(function ($q) use ($companies) {
-                foreach ($companies as $companyId) {
-                    $q->orWhere('company', 'like', "%-{$companyId}-%");
-                }
-            });
-        } elseif ($authUser->utype === 'agent') {
-            // cadmin sees ONLY agents of same company
-            $companies = explode('-',trim($authUser->company,'-'));
-            $crmLeads->where('cby',$authUser->id) 
-            ->where(function ($q) use ($companies) {
-                foreach ($companies as $companyId) {
-                    $q->orWhere('company', 'like', "%-{$companyId}-%");
-                }
-            });
-        } else {
-            // Other roles → empty
-            $companies = explode('-',trim($authUser->company,'-'));
-            $crmLeads->where('agent',$authUser->id);
-        }
-        
+
+        $crmLeads = $this->scopedLeadsQuery($request);
+
         if ($request->filled('search')) {
             $crmLeads->where(function ($q) use ($request) {
                 $q->where('name', 'like', '%' . $request->search . '%')
@@ -158,7 +151,7 @@ class CrmLeadController extends Controller
             $payload['status'] = $payload['status'] ?? 'New';
 
             // If an agent is creating a lead, auto-assign the lead to that agent.
-            if ($authUser && ($authUser->utype !== 'sadmin' && $authUser->utype !== 'cadmin')) {
+            if ($authUser && ! $this->authz->isTenantAdmin($authUser)) {
                 $payload['agent'] = $authUser->id;
             }
 
@@ -294,8 +287,8 @@ class CrmLeadController extends Controller
     {
         $perPage = $request->get('per_page', 9);
 
-        $crmLeads = CrmLead::query();
-        
+        $crmLeads = $this->scopedLeadsQuery($request);
+
         if ($request->filled('search')) {
             $crmLeads->where(function ($q) use ($request) {
                 $q->where('name', 'like', '%' . $request->search . '%')
@@ -356,8 +349,8 @@ class CrmLeadController extends Controller
     {
         $perPage = $request->get('per_page', 9);
 
-        $crmLeads = CrmLead::query();
-        
+        $crmLeads = $this->scopedLeadsQuery($request);
+
         if ($request->filled('search')) {
             $crmLeads->where(function ($q) use ($request) {
                 $q->where('name', 'like', '%' . $request->search . '%')
@@ -418,7 +411,7 @@ class CrmLeadController extends Controller
     {
         $perPage = $request->get('per_page', 9);
 
-        $crmLeads = CrmLead::query();
+        $crmLeads = $this->scopedLeadsQuery($request);
         
         if ($request->filled('search')) {
             $crmLeads->where(function ($q) use ($request) {
@@ -480,7 +473,7 @@ class CrmLeadController extends Controller
     {
         $perPage = $request->get('per_page', 9);
 
-        $crmLeads = CrmLead::query();
+        $crmLeads = $this->scopedLeadsQuery($request);
         
         if ($request->filled('search')) {
             $crmLeads->where(function ($q) use ($request) {
@@ -538,7 +531,7 @@ class CrmLeadController extends Controller
     {
         $perPage = $request->get('per_page', 9);
         
-        $crmLeads = CrmLead::query();
+        $crmLeads = $this->scopedLeadsQuery($request);
         
         if ($request->filled('search')) {
             $crmLeads->where(function ($q) use ($request) {

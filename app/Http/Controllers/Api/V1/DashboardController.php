@@ -7,90 +7,37 @@ use App\Models\CrmFolders;
 use App\Models\CrmLead;
 use App\Models\CrmPayment;
 use App\Models\User;
+use App\Services\Auth\AuthorizationService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
+    public function __construct(
+        private readonly AuthorizationService $authz,
+    ) {}
+
     public function index(Request $request)
     {
         $user = $request->user();
-        $utype = (string) ($user->utype ?? '');
-
-        $companyIds = $this->resolveCompanyIds($user);
 
         return response()->json([
             'status' => true,
             'data'   => [
-                'leads'    => $this->leadStats($user, $utype, $companyIds),
-                'folders'  => $this->folderStats($user, $utype, $companyIds),
-                'payments' => $this->paymentStats($user, $utype, $companyIds),
-                'trend'    => $this->monthlyLeadTrend($user, $utype, $companyIds),
-                'agents'   => $this->agentLeaderboard($user, $utype, $companyIds),
-                'recent'   => $this->recentLeads($user, $utype, $companyIds),
+                'leads'    => $this->leadStats($user),
+                'folders'  => $this->folderStats($user),
+                'payments' => $this->paymentStats($user),
+                'trend'    => $this->monthlyLeadTrend($user),
+                'agents'   => $this->agentLeaderboard($user),
+                'recent'   => $this->recentLeads($user),
             ],
         ]);
     }
 
-    // ─── helpers ────────────────────────────────────────────────────────────
-
-    private function resolveCompanyIds(User $user): array
+    private function leadStats(User $user): array
     {
-        return array_filter(
-            explode('-', trim((string) ($user->company ?? ''), '-')),
-            fn ($v) => $v !== ''
-        );
-    }
-
-    private function scopeLeads(string $utype, int $userId, array $companyIds)
-    {
-        $q = CrmLead::query();
-
-        if ($utype === 'sadmin') {
-            // sees everything
-        } elseif ($utype === 'cadmin') {
-            $q->where('mby', $userId)
-              ->where(function ($inner) use ($companyIds) {
-                  foreach ($companyIds as $cid) {
-                      $inner->orWhere('company', 'like', "%-{$cid}-%");
-                  }
-              });
-        } elseif ($utype === 'agent') {
-            $q->where('cby', $userId);
-        } else {
-            $q->where('agent', $userId);
-        }
-
-        return $q;
-    }
-
-    private function scopeFolders(string $utype, int $userId, array $companyIds)
-    {
-        $q = CrmFolders::query();
-
-        if ($utype === 'sadmin') {
-            // sees everything
-        } elseif (in_array($utype, ['cadmin', 'agent'], true)) {
-            if ($companyIds) {
-                $q->where(function ($inner) use ($companyIds) {
-                    foreach ($companyIds as $cid) {
-                        $inner->orWhere('company', 'like', "%-{$cid}-%");
-                    }
-                });
-            }
-        } else {
-            $q->where('booked_by', $userId);
-        }
-
-        return $q;
-    }
-
-    // ─── sections ────────────────────────────────────────────────────────────
-
-    private function leadStats(User $user, string $utype, array $companyIds): array
-    {
-        $base = fn () => $this->scopeLeads($utype, $user->id, $companyIds);
+        $base = fn () => $this->authz->scopeLeads(CrmLead::query(), $user);
 
         $byStatus = (clone $base())
             ->select('status', DB::raw('COUNT(*) as count'))
@@ -125,9 +72,9 @@ class DashboardController extends Controller
         return $denom > 0 ? round(($booked / $denom) * 100, 1) : 0.0;
     }
 
-    private function folderStats(User $user, string $utype, array $companyIds): array
+    private function folderStats(User $user): array
     {
-        $q = $this->scopeFolders($utype, $user->id, $companyIds);
+        $q = $this->authz->scopeFolders(CrmFolders::query(), $user);
 
         $agg = (clone $q)
             ->select(
@@ -155,11 +102,9 @@ class DashboardController extends Controller
         ];
     }
 
-    private function paymentStats(User $user, string $utype, array $companyIds): array
+    private function paymentStats(User $user): array
     {
-        // Payments are scoped via their folder's company field
-        $folderIds = $this->scopeFolders($utype, $user->id, $companyIds)
-            ->pluck('id');
+        $folderIds = $this->authz->scopeFolders(CrmFolders::query(), $user)->pluck('id');
 
         $q = CrmPayment::whereIn('folder_id', $folderIds);
 
@@ -184,12 +129,12 @@ class DashboardController extends Controller
         ];
     }
 
-    private function monthlyLeadTrend(User $user, string $utype, array $companyIds): array
+    private function monthlyLeadTrend(User $user): array
     {
         $months = collect(range(5, 0))->map(fn ($i) => Carbon::now()->subMonths($i));
 
-        return $months->map(function (Carbon $month) use ($user, $utype, $companyIds) {
-            $count = $this->scopeLeads($utype, $user->id, $companyIds)
+        return $months->map(function (Carbon $month) use ($user) {
+            $count = $this->authz->scopeLeads(CrmLead::query(), $user)
                 ->whereYear('cdate', $month->year)
                 ->whereMonth('cdate', $month->month)
                 ->count();
@@ -202,14 +147,13 @@ class DashboardController extends Controller
         })->values()->toArray();
     }
 
-    private function agentLeaderboard(User $user, string $utype, array $companyIds): array
+    private function agentLeaderboard(User $user): array
     {
-        // Only meaningful for roles that can see multiple agents
-        if (!in_array($utype, ['sadmin', 'cadmin'], true)) {
+        if (! $this->authz->isTenantAdmin($user)) {
             return [];
         }
 
-        $q = $this->scopeLeads($utype, $user->id, $companyIds)
+        $q = $this->authz->scopeLeads(CrmLead::query(), $user)
             ->select(
                 'agent',
                 DB::raw('COUNT(*) as total'),
@@ -227,6 +171,7 @@ class DashboardController extends Controller
 
         return $q->map(function ($row) use ($users) {
             $u = $users->get($row->agent);
+
             return [
                 'agent_id'   => $row->agent,
                 'name'       => $u?->name  ?? 'Unknown',
@@ -240,9 +185,9 @@ class DashboardController extends Controller
         })->values()->toArray();
     }
 
-    private function recentLeads(User $user, string $utype, array $companyIds): array
+    private function recentLeads(User $user): array
     {
-        return $this->scopeLeads($utype, $user->id, $companyIds)
+        return $this->authz->scopeLeads(CrmLead::query(), $user)
             ->select('id', 'name', 'email', 'phone', 'status', 'lead_type', 'agent', 'cdate')
             ->orderByDesc('id')
             ->limit(10)

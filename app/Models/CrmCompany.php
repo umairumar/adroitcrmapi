@@ -2,13 +2,17 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 
 class CrmCompany extends Model
 {
+    use BelongsToTenant;
+
     protected $table = 'crm_company';
 
     protected $fillable = [
+        'tenant_id',
         'title',
         'address',
         'email',

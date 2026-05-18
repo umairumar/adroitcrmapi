@@ -2,20 +2,25 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Support\Facades\DB;
 use Laravel\Sanctum\HasApiTokens;
 
-use Illuminate\Support\Facades\DB;
 class User extends Authenticatable
 {
     use HasApiTokens;
+    use BelongsToTenant;
 
     protected $table = 'user';
+
     protected $primaryKey = 'id';
+
     public $timestamps = false;
 
-
     protected $fillable = [
+        'tenant_id',
+        'is_platform_admin',
         'email',
         'password',
         'utype',
@@ -42,29 +47,68 @@ class User extends Authenticatable
 
     protected $hidden = ['password'];
 
-    // Hide any real 'companies' relationship if exists
-    protected $appends = ['companies']; // make it part of JSON automatically
+    protected $appends = ['companies'];
 
-    // Custom accessor to return multiple companies
+    public function tenant()
+    {
+        return $this->belongsTo(Tenant::class);
+    }
+
+    public function roles()
+    {
+        return $this->belongsToMany(Role::class, 'user_role', 'user_id', 'role_id')
+            ->withPivot('tenant_id')
+            ->withTimestamps();
+    }
+
+    public function isPlatformAdmin(): bool
+    {
+        if ((bool) ($this->is_platform_admin ?? false)) {
+            return true;
+        }
+
+        return ($this->utype ?? '') === 'sadmin';
+    }
+
+    public function hasPermission(string $slug): bool
+    {
+        if ($this->isPlatformAdmin()) {
+            return true;
+        }
+
+        return DB::table('user_role')
+            ->join('roles', 'roles.id', '=', 'user_role.role_id')
+            ->join('role_permission', 'role_permission.role_id', '=', 'roles.id')
+            ->join('permissions', 'permissions.id', '=', 'role_permission.permission_id')
+            ->where('user_role.user_id', $this->id)
+            ->where('permissions.slug', $slug)
+            ->exists();
+    }
+
     public function getCompaniesAttribute()
     {
-        if (empty($this->company)) return collect();
+        if (empty($this->company)) {
+            return collect();
+        }
 
-        // Remove leading/trailing dashes and explode
-        $companyIds = array_filter(explode('-', trim($this->company, '-')), function($v) {
-            return is_numeric($v) && (int)$v > 0;
+        $companyIds = array_filter(explode('-', trim($this->company, '-')), function ($v) {
+            return is_numeric($v) && (int) $v > 0;
         });
 
-        if (empty($companyIds)) return collect();
+        if (empty($companyIds)) {
+            return collect();
+        }
 
         $companyIds = array_map('intval', $companyIds);
 
-        // Fetch companies in the order of IDs in the string
-        $companies = DB::table('crm_company')
-            ->whereIn('id', $companyIds)
-            ->orderByRaw("FIELD(id," . implode(',', $companyIds) . ")")
-            ->get();
+        $query = DB::table('crm_company')->whereIn('id', $companyIds);
 
-        return $companies;
+        if ($this->tenant_id) {
+            $query->where('tenant_id', $this->tenant_id);
+        }
+
+        return $query
+            ->orderByRaw('FIELD(id,' . implode(',', $companyIds) . ')')
+            ->get();
     }
 }

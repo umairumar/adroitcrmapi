@@ -13,10 +13,13 @@ use App\Models\CrmPayment;
 
 class CrmFolders extends Model
 {
+    use \App\Models\Concerns\BelongsToTenant;
+
     protected $table = 'crm_folders';
     public $timestamps = true;
     
     protected $fillable = [
+        'tenant_id',
         'order_type','vendor_ref','company','booked_by','invoice_status',
         'closed_on','destination','travel_date','no_of_passengers',
         'ziaraats_makkah','ziaraats_madinah','balanceduedate',

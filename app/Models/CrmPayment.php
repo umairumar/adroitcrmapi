@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 
 class CrmPayment extends Model
 {
+    use BelongsToTenant;
+
     protected $table = 'crm_payments';
     public $timestamps = false;
     protected $primaryKey = 'id';
@@ -13,6 +16,7 @@ class CrmPayment extends Model
     protected $keyType = 'int';
 
     protected $fillable = [
+        'tenant_id',
         'folder_id',
         'payment',
         'pdate',

@@ -22,7 +22,7 @@ class AuthController extends Controller
             'password' => 'required'
         ]);
 
-        $user = User::where('email', $request->email)->first();
+        $user = User::withoutGlobalScopes()->where('email', $request->email)->first();
 
         //dd (Hash::check($request->password, $user->password));
         //exit;
@@ -35,10 +35,16 @@ class AuthController extends Controller
 
         $token = $user->createToken('crm-token')->plainTextToken;
 
+        $tenant = $user->tenant_id
+            ? \App\Models\Tenant::find($user->tenant_id)
+            : null;
+
         return response()->json([
             'status' => true,
             'token'  => $token,
-            'user'   => $user
+            'user'   => $user,
+            'tenant' => $tenant,
+            'is_platform_admin' => $user->isPlatformAdmin(),
         ]);
     }
 

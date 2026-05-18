@@ -3,42 +3,45 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Hash;
-
 use App\Models\User;
+use App\Services\Auth\AuthorizationService;
+use App\Services\Auth\BranchAccess;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
 
 class UserController extends Controller
 {
+    public function __construct(
+        private readonly AuthorizationService $authz,
+        private readonly BranchAccess $branchAccess,
+    ) {}
+
     // LIST USERS
     public function index(Request $request)
     {
             $authUser = $request->user();
 
+            if (! $this->authz->canManageUsers($authUser)) {
+                return response()->json(['status' => false, 'message' => 'Forbidden'], 403);
+            }
+
             $perPage = $request->input('per_page', 9);
-            
+
             $users = User::query();
 
-            // --------------------------------------------
-            // Role & company-based filtering
-            // --------------------------------------------
-            if ($authUser->utype === 'sadmin') {
-                // Director → sees all users (optional: you can also exclude himself if needed)
-            } elseif ($authUser->utype === 'cadmin') {
-
-                // cadmin sees ONLY agents of same company
-                $companies = explode('-', trim($authUser->company, '-'));
-                $users->where('utype', 'agent')        // ONLY agents
-                ->where('id', '<>', $authUser->id)    // exclude self
+            if ($authUser->isPlatformAdmin()) {
+                // all users (optionally scoped by tenant middleware)
+            } elseif ($authUser->utype === 'cadmin' || $this->authz->roleSlug($authUser) === 'tenant_admin') {
+                $companies = $this->branchAccess->branchIdsFor($authUser);
+                $users->where('utype', 'agent')
+                ->where('id', '<>', $authUser->id)
                 ->where(function ($q) use ($companies) {
                     foreach ($companies as $companyId) {
                         $q->orWhere('company', 'like', "%-{$companyId}-%");
                     }
                 });
-
             } else {
-                // Other roles → empty
                 $users->whereRaw('1 = 0');
             }
 
@@ -94,6 +97,10 @@ class UserController extends Controller
     // CREATE USER
     public function store(Request $request)
     {
+        if (! $this->authz->canManageUsers($request->user())) {
+            return response()->json(['status' => false, 'message' => 'Forbidden'], 403);
+        }
+
         $validator = Validator::make($request->all(), [
             'email'    => 'required|email|unique:user,email',
             'password' => 'required|min:6',
@@ -125,6 +132,7 @@ class UserController extends Controller
 
         
         $user = User::create([
+            'tenant_id'             => $request->user()->tenant_id,
             'email'                 => $request->email,
             'password'              => Hash::make($request->password), //Hash::make($request->password)
             'utype'                 => $request->utype,
