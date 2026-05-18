@@ -19,7 +19,24 @@ class AuthorizationService
             return true;
         }
 
-        return $user->hasPermission($permission);
+        if ($user->hasPermission($permission)) {
+            return true;
+        }
+
+        $fallbacks = [
+            'pipeline.view' => ['leads.view'],
+            'pipeline.manage' => ['leads.manage'],
+            'contacts.view' => ['leads.view'],
+            'contacts.manage' => ['leads.manage'],
+        ];
+
+        foreach ($fallbacks[$permission] ?? [] as $alt) {
+            if ($user->hasPermission($alt)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function roleSlug(User $user): string

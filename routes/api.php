@@ -12,6 +12,14 @@ use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\TenantController;
 use App\Http\Controllers\Api\V1\TenantRegistrationController;
 use App\Http\Controllers\Api\V1\TenantBillingController;
+use App\Http\Controllers\Api\V1\PipelineStageController;
+use App\Http\Controllers\Api\V1\SalesPipelineController;
+use App\Http\Controllers\Api\V1\ContactController;
+use App\Http\Controllers\Api\V1\OrganizationController;
+use App\Http\Controllers\Api\V1\TagController;
+use App\Http\Controllers\Api\V1\SegmentController;
+use App\Http\Controllers\Api\V1\LeadAssignmentRuleController;
+use App\Http\Controllers\Api\V1\ReferralCodeController;
 
 Route::prefix('v1')->group(function () {
 
@@ -59,6 +67,45 @@ Route::prefix('v1')->group(function () {
 
         // Dashboard
         Route::get('/dashboard', [DashboardController::class, 'index']);
+
+        // Sales pipeline (Phase 1)
+        Route::get('/pipeline/kanban', [SalesPipelineController::class, 'kanban']);
+        Route::get('/pipeline/funnel', [SalesPipelineController::class, 'funnel']);
+        Route::get('/pipeline/sla-breaches', [SalesPipelineController::class, 'slaBreaches']);
+        Route::get('/pipeline/sources', [SalesPipelineController::class, 'sources']);
+        Route::post('/pipeline/leads/{leadId}/move', [SalesPipelineController::class, 'moveStage']);
+        Route::get('/pipeline/leads/{leadId}/history', [SalesPipelineController::class, 'history']);
+        Route::post('/pipeline/leads/{leadId}/auto-assign', [SalesPipelineController::class, 'autoAssign']);
+
+        Route::get('/pipeline/stages', [PipelineStageController::class, 'index']);
+        Route::post('/pipeline/stages', [PipelineStageController::class, 'store']);
+        Route::put('/pipeline/stages/{id}', [PipelineStageController::class, 'update']);
+
+        Route::get('/assignment-rules', [LeadAssignmentRuleController::class, 'index']);
+        Route::post('/assignment-rules', [LeadAssignmentRuleController::class, 'store']);
+        Route::put('/assignment-rules/{id}', [LeadAssignmentRuleController::class, 'update']);
+        Route::delete('/assignment-rules/{id}', [LeadAssignmentRuleController::class, 'destroy']);
+
+        Route::get('/contacts', [ContactController::class, 'index']);
+        Route::post('/contacts', [ContactController::class, 'store']);
+        Route::get('/contacts/{id}', [ContactController::class, 'show']);
+        Route::put('/contacts/{id}', [ContactController::class, 'update']);
+        Route::get('/contacts/{id}/timeline', [ContactController::class, 'timeline']);
+
+        Route::get('/organizations', [OrganizationController::class, 'index']);
+        Route::post('/organizations', [OrganizationController::class, 'store']);
+        Route::get('/organizations/{id}', [OrganizationController::class, 'show']);
+        Route::put('/organizations/{id}', [OrganizationController::class, 'update']);
+
+        Route::get('/tags', [TagController::class, 'index']);
+        Route::post('/tags', [TagController::class, 'store']);
+
+        Route::get('/segments', [SegmentController::class, 'index']);
+        Route::post('/segments', [SegmentController::class, 'store']);
+        Route::get('/segments/{id}/preview', [SegmentController::class, 'preview']);
+
+        Route::get('/referral-codes', [ReferralCodeController::class, 'index']);
+        Route::post('/referral-codes', [ReferralCodeController::class, 'store']);
 
         // Companies (branches) APIs
         Route::get('/companies', [CrmCompanyController::class, 'index']);

@@ -8,6 +8,7 @@ use App\Models\CrmLead;
 use App\Models\CrmPayment;
 use App\Models\User;
 use App\Services\Auth\AuthorizationService;
+use App\Services\Sales\PipelineService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -16,6 +17,7 @@ class DashboardController extends Controller
 {
     public function __construct(
         private readonly AuthorizationService $authz,
+        private readonly PipelineService $pipeline,
     ) {}
 
     public function index(Request $request)
@@ -31,6 +33,12 @@ class DashboardController extends Controller
                 'trend'    => $this->monthlyLeadTrend($user),
                 'agents'   => $this->agentLeaderboard($user),
                 'recent'   => $this->recentLeads($user),
+                'pipeline' => $this->authz->hasPermission($user, 'pipeline.view')
+                    ? [
+                        'funnel' => $this->pipeline->funnelStats($user),
+                        'sla_breaches_count' => $this->pipeline->slaBreaches($user)->count(),
+                    ]
+                    : null,
             ],
         ]);
     }

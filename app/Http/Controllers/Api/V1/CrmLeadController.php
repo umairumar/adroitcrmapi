@@ -7,6 +7,10 @@ use App\Http\Controllers\Controller;
 use App\Models\CrmLead;
 use App\Models\Tenant;
 use App\Services\Auth\AuthorizationService;
+use App\Services\Sales\LeadAssignmentService;
+use App\Services\Sales\LeadCaptureService;
+use App\Services\Sales\PipelineService;
+use App\Models\PipelineStage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -16,6 +20,9 @@ class CrmLeadController extends Controller
 
     public function __construct(
         private readonly AuthorizationService $authz,
+        private readonly LeadCaptureService $capture,
+        private readonly LeadAssignmentService $assignment,
+        private readonly PipelineService $pipeline,
     ) {}
 
     // CREATE DIRECT LEAD (public; pass tenant_slug to scope lead)
@@ -33,23 +40,32 @@ class CrmLeadController extends Controller
                 $tenantId = $tenant->id;
             }
 
-            $lead = CrmLead::withoutGlobalScopes()->create(array_merge(
-                [
-                    'tenant_id' => $tenantId,
-                    'name'      => $request->name,
-                    'email'     => $request->email,
-                    'phone'     => $request->phone,
-                    'lead_details' => $request->lead_details,
-                    'mby'       => $request->mby,
-                    'mdate'     => now(),
-                    'cby'       => $request->cby,
-                    'cdate'     => now(),
-                ]
-            ));
+            $lead = CrmLead::withoutGlobalScopes()->create([
+                'tenant_id' => $tenantId,
+                'name' => $request->name,
+                'email' => $request->email,
+                'phone' => $request->phone,
+                'lead_details' => $request->lead_details,
+                'lead_type' => $request->lead_type,
+                'destination' => $request->destination,
+                'mby' => $request->mby,
+                'mdate' => now(),
+                'cby' => $request->cby,
+                'cdate' => now(),
+            ]);
+
+            $lead = $this->capture->enrichNewLead($lead, $request);
+            $this->assignment->autoAssign($lead);
+
+            $duplicates = $tenantId
+                ? $this->capture->findDuplicates($tenantId, $lead->email, $lead->phone, $lead->id)
+                : [];
 
             return response()->json([
-                'status'  => true,
+                'status' => true,
                 'message' => 'Lead created successfully',
+                'duplicates' => $duplicates,
+                'data' => $lead,
             ], 201);
     }
     
@@ -60,6 +76,12 @@ class CrmLeadController extends Controller
 
         $crmLeads = $this->scopedLeadsQuery($request);
 
+        if ($request->filled('pipeline_stage_id')) {
+            $crmLeads->where('pipeline_stage_id', $request->pipeline_stage_id);
+        }
+        if ($request->filled('source')) {
+            $crmLeads->where('source', $request->source);
+        }
         if ($request->filled('search')) {
             $crmLeads->where(function ($q) use ($request) {
                 $q->where('name', 'like', '%' . $request->search . '%')
@@ -73,9 +95,12 @@ class CrmLeadController extends Controller
                     ]);
             }
         }
+
+        if (! $request->filled('pipeline_stage_id')) {
+            $crmLeads->where('status', 'New');
+        }
         
         $crmLeads = $crmLeads
-            ->where('status', 'New')
             ->orderBy('id', 'desc')
             ->paginate($perPage);
             
@@ -167,11 +192,18 @@ class CrmLeadController extends Controller
             $payload['mdate']   = now();
 
             $lead = CrmLead::create($payload);
+            $lead = $this->capture->enrichNewLead($lead, $request);
+            $this->assignment->autoAssign($lead);
+
+            $duplicates = $lead->tenant_id
+                ? $this->capture->findDuplicates($lead->tenant_id, $lead->email, $lead->phone, $lead->id)
+                : [];
 
             return response()->json([
                 'status'  => true,
                 'message' => 'Lead created successfully',
                 'data'    => $lead,
+                'duplicates' => $duplicates,
             ], 201);
             
     }
@@ -265,19 +297,24 @@ class CrmLeadController extends Controller
             ], 422);
         }
 
-        $lead->update(array_merge(
-            [
-                'agent'     => $request->agent ?? 0,
-                'mby'       => $request->mby ?? 0,
-                'status'    => 'Open',
-                'mdate'     => now()
-            ]
-        ));
+        $lead->update([
+            'agent' => $request->agent ?? 0,
+            'assigned_at' => now(),
+            'mby' => $request->mby ?? 0,
+            'mdate' => now(),
+        ]);
+
+        $stage = PipelineStage::where('slug', 'contacted')->first();
+        if ($stage && $lead->pipeline_stage_id !== $stage->id) {
+            $lead = $this->pipeline->moveLeadToStage($lead, $stage, $request->user(), 'Agent assigned');
+        } else {
+            $lead->update(['status' => 'Open']);
+        }
 
         return response()->json([
             'status'  => true,
             'message' => 'Lead Assigned successfully',
-            'data'    => $lead
+            'data'    => $lead->fresh(['pipelineStage']),
         ]);
 
     }
@@ -329,12 +366,12 @@ class CrmLeadController extends Controller
             ], 404);
         }
 
-        $lead->update(array_merge(
-            [
-                'status'    => 'Booked',
-                'mdate'     => now()
-            ]
-        ));
+        $stage = PipelineStage::where('slug', 'booked')->first();
+        if ($stage) {
+            $lead = $this->pipeline->moveLeadToStage($lead, $stage, $request->user());
+        } else {
+            $lead->update(['status' => 'Booked', 'mdate' => now()]);
+        }
 
         return response()->json([
             'status'  => true,
@@ -391,12 +428,12 @@ class CrmLeadController extends Controller
             ], 404);
         }
 
-        $lead->update(array_merge(
-            [
-                'status'    => 'Not Booked',
-                'mdate'     => now()
-            ]
-        ));
+        $stage = PipelineStage::where('slug', 'lost')->first();
+        if ($stage) {
+            $lead = $this->pipeline->moveLeadToStage($lead, $stage, $request->user());
+        } else {
+            $lead->update(['status' => 'Not Booked', 'mdate' => now()]);
+        }
 
         return response()->json([
             'status'  => true,
@@ -453,12 +490,12 @@ class CrmLeadController extends Controller
             ], 404);
         }
 
-        $lead->update(array_merge(
-            [
-                'status'    => 'Archive',
-                'mdate'     => now()
-            ]
-        ));
+        $stage = PipelineStage::where('slug', 'archived')->first();
+        if ($stage) {
+            $lead = $this->pipeline->moveLeadToStage($lead, $stage, $request->user());
+        } else {
+            $lead->update(['status' => 'Archive', 'mdate' => now()]);
+        }
 
         return response()->json([
             'status'  => true,

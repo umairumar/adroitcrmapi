@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\Tenant;
+use App\Services\Sales\PipelineService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -27,6 +28,10 @@ class SaasFoundationSeeder extends Seeder
             ['name' => 'View dashboard', 'slug' => 'dashboard.view', 'module' => 'dashboard'],
             ['name' => 'Manage tenant settings', 'slug' => 'tenant.settings', 'module' => 'tenant'],
             ['name' => 'Platform administration', 'slug' => 'platform.admin', 'module' => 'platform'],
+            ['name' => 'View sales pipeline', 'slug' => 'pipeline.view', 'module' => 'pipeline'],
+            ['name' => 'Manage sales pipeline', 'slug' => 'pipeline.manage', 'module' => 'pipeline'],
+            ['name' => 'View contacts', 'slug' => 'contacts.view', 'module' => 'contacts'],
+            ['name' => 'Manage contacts', 'slug' => 'contacts.manage', 'module' => 'contacts'],
         ];
 
         foreach ($permissions as $perm) {
@@ -49,15 +54,19 @@ class SaasFoundationSeeder extends Seeder
                     'folders.view', 'folders.manage',
                     'payments.view', 'payments.process',
                     'dashboard.view', 'tenant.settings',
+                    'pipeline.view', 'pipeline.manage',
+                    'contacts.view', 'contacts.manage',
                 ],
             ],
             'agent' => [
                 'name' => 'Sales Agent',
                 'permissions' => [
-                    'leads.view', 'leads.manage',
+                    'leads.view', 'leads.manage', 'leads.assign',
                     'companies.view',
                     'folders.view', 'folders.manage',
                     'dashboard.view',
+                    'pipeline.view',
+                    'contacts.view',
                 ],
             ],
             'accountant' => [
@@ -83,7 +92,7 @@ class SaasFoundationSeeder extends Seeder
             $role->permissions()->sync($permissionIds);
         }
 
-        Tenant::firstOrCreate(
+        $tenant = Tenant::firstOrCreate(
             ['slug' => config('saas.legacy_tenant_slug', 'default')],
             [
                 'name' => 'Default Organization',
@@ -95,5 +104,7 @@ class SaasFoundationSeeder extends Seeder
                 'payment_terms_days' => (int) config('saas.billing.default_payment_terms_days', 30),
             ]
         );
+
+        app(PipelineService::class)->seedDefaultStagesForTenant($tenant->id);
     }
 }
