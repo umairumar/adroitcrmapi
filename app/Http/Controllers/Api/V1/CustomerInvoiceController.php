@@ -7,6 +7,7 @@ use App\Models\CustomerInvoice;
 use App\Models\CrmFolders;
 use App\Services\Auth\AuthorizationService;
 use App\Services\Finance\AccountsReceivableService;
+use App\Services\Finance\CustomerInvoicePdfService;
 use Illuminate\Http\Request;
 
 class CustomerInvoiceController extends Controller
@@ -14,6 +15,7 @@ class CustomerInvoiceController extends Controller
     public function __construct(
         private readonly AuthorizationService $authz,
         private readonly AccountsReceivableService $ar,
+        private readonly CustomerInvoicePdfService $pdf,
     ) {}
 
     public function index(Request $request)
@@ -22,19 +24,56 @@ class CustomerInvoiceController extends Controller
             return response()->json(['status' => false, 'message' => 'Forbidden'], 403);
         }
 
-        $q = CustomerInvoice::with('lines')->orderByDesc('id');
+        $q = CustomerInvoice::with(['lines', 'folder.passengersNames'])->orderByDesc('id');
         if ($request->filled('status')) {
             $q->where('status', $request->status);
+        }
+        if ($request->filled('folder_id')) {
+            $q->where('folder_id', $request->folder_id);
         }
 
         return response()->json(['status' => true, 'data' => $q->paginate(20)]);
     }
 
-    public function show(int $id)
+    public function show(Request $request, int $id)
     {
-        $invoice = CustomerInvoice::with('lines')->findOrFail($id);
+        if (! $this->authz->hasPermission($request->user(), 'finance.view')) {
+            return response()->json(['status' => false, 'message' => 'Forbidden'], 403);
+        }
+
+        $invoice = CustomerInvoice::with(['lines', 'folder.passengersNames', 'folder.hotels', 'folder.lead'])
+            ->findOrFail($id);
 
         return response()->json(['status' => true, 'data' => $invoice]);
+    }
+
+    public function preview(Request $request, int $id)
+    {
+        if (! $this->authz->hasPermission($request->user(), 'finance.view')) {
+            return response()->json(['status' => false, 'message' => 'Forbidden'], 403);
+        }
+
+        $invoice = CustomerInvoice::with(['lines', 'folder.passengersNames', 'folder.hotels', 'folder.lead', 'folder.payments'])
+            ->findOrFail($id);
+
+        return response()->json([
+            'status' => true,
+            'data' => $this->pdf->buildViewData($invoice),
+        ]);
+    }
+
+    public function pdf(Request $request, int $id)
+    {
+        if (! $this->authz->hasPermission($request->user(), 'finance.view')) {
+            return response()->json(['status' => false, 'message' => 'Forbidden'], 403);
+        }
+
+        $invoice = CustomerInvoice::findOrFail($id);
+        $disposition = $request->query('inline') ? 'stream' : 'download';
+
+        return $disposition === 'stream'
+            ? $this->pdf->stream($invoice)
+            : $this->pdf->download($invoice);
     }
 
     public function createFromFolder(Request $request, int $folderId)
