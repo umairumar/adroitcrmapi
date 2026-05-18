@@ -58,3 +58,48 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
 # adroitcrmapi
+
+Laravel API for **Adroit Travel CRM** (multi-tenant SaaS). Pair with the frontend: [adroitsolscrmfront](https://github.com/umairumar/adroitsolscrmfront).
+
+## Quick start (full SaaS API on `main`)
+
+```bash
+git clone https://github.com/umairumar/adroitcrmapi.git
+cd adroitcrmapi
+chmod +x scripts/saas-install.sh
+./scripts/saas-install.sh
+php artisan serve
+```
+
+Or with Docker:
+
+```bash
+docker compose up --build
+# API: http://localhost:8000
+```
+
+## Frontend
+
+```bash
+git clone https://github.com/umairumar/adroitsolscrmfront.git
+cd adroitsolscrmfront
+# Set API URL to http://localhost:8000 (or your production API)
+npm install && npm run dev
+```
+
+## First tenant
+
+- **Migrate existing DB:** run `./scripts/saas-install.sh` (includes backfill commands).
+- **New tenant:** `POST /api/v1/tenants/register` with `name`, `slug`, `email`, `password`, etc.
+- **UI bootstrap:** `GET /api/v1/app/bootstrap?tenant=default`
+
+## Production deploy
+
+1. Pull `main`, run `scripts/saas-install.sh` on the server (MySQL required).
+2. Point `adroitsolscrmfront` env at your API URL.
+3. Set `SANCTUM_STATEFUL_DOMAINS` to your frontend domain(s).
+4. Cron: `engagement:process-campaigns`, `webhooks:deliver`, `integrations:sync` (optional).
+
+---
+
+# adroitcrmapi (Laravel)
