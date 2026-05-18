@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class CustomerInvoice extends Model
@@ -28,6 +29,11 @@ class CustomerInvoice extends Model
             'amount_paid' => 'decimal:2',
             'fx_rate' => 'decimal:8',
         ];
+    }
+
+    public function folder(): BelongsTo
+    {
+        return $this->belongsTo(CrmFolders::class, 'folder_id');
     }
 
     public function lines(): HasMany

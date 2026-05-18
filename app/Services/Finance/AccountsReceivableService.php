@@ -30,13 +30,16 @@ class AccountsReceivableService
     public function createFromFolder(CrmFolders $folder, ?int $createdBy = null): CustomerInvoice
     {
         return DB::transaction(function () use ($folder, $createdBy) {
+            $folder->loadMissing(['passengersNames', 'hotels', 'lead', 'payments']);
+
             $sell = (float) ($folder->sell ?? 0);
             $taxCalc = $this->tax->calculate($sell);
             $terms = 30;
+            $contactId = $folder->lead?->contact_id;
 
             $invoice = CustomerInvoice::create([
                 'folder_id' => $folder->id,
-                'contact_id' => null,
+                'contact_id' => $contactId,
                 'invoice_number' => $this->nextInvoiceNumber($folder->tenant_id),
                 'issue_date' => Carbon::today(),
                 'due_date' => Carbon::today()->addDays($terms),
@@ -46,22 +49,78 @@ class AccountsReceivableService
                 'total' => $taxCalc['gross'],
                 'status' => 'sent',
                 'revenue_recognition' => 'on_payment',
+                'notes' => $this->buildInvoiceNotes($folder),
             ]);
 
-            CustomerInvoiceLine::create([
-                'customer_invoice_id' => $invoice->id,
-                'description' => 'Travel booking #' . $folder->id . ($folder->destination ? ' — ' . $folder->destination : ''),
-                'quantity' => 1,
-                'unit_price' => $sell,
-                'tax_rate_id' => $taxCalc['tax_rate_id'] ?? null,
-                'tax_amount' => $taxCalc['tax_amount'],
-                'line_total' => $taxCalc['gross'],
-            ]);
+            foreach ($this->buildLineItems($folder, $sell, $taxCalc) as $line) {
+                CustomerInvoiceLine::create(array_merge(
+                    ['customer_invoice_id' => $invoice->id],
+                    $line
+                ));
+            }
+
+            $folder->update(['invoice_status' => 'invoiced']);
 
             $this->postInvoiceToGl($invoice, $folder->tenant_id, $createdBy);
 
-            return $invoice->fresh('lines');
+            return $invoice->fresh(['lines', 'folder.passengersNames']);
         });
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function buildLineItems(CrmFolders $folder, float $sell, array $taxCalc): array
+    {
+        $destination = $folder->destination ?: 'Travel package';
+        $pax = $folder->no_of_passengers ?: $folder->passengersNames->count() ?: 1;
+        $mainDescription = sprintf(
+            '%s — %s passenger(s)%s',
+            $destination,
+            $pax,
+            $folder->travel_date ? ' — departure ' . $folder->travel_date : ''
+        );
+
+        $lines = [[
+            'description' => $mainDescription,
+            'quantity' => 1,
+            'unit_price' => $sell,
+            'tax_rate_id' => $taxCalc['tax_rate_id'] ?? null,
+            'tax_amount' => $taxCalc['tax_amount'],
+            'line_total' => $taxCalc['gross'],
+        ]];
+
+        foreach ($folder->hotels as $hotel) {
+            if (! $hotel->hotel_name) {
+                continue;
+            }
+            $lines[] = [
+                'description' => sprintf(
+                    'Hotel: %s, %s (%s nights)',
+                    $hotel->hotel_name,
+                    $hotel->city ?: '—',
+                    $hotel->nights ?: '—'
+                ),
+                'quantity' => 1,
+                'unit_price' => 0,
+                'tax_rate_id' => null,
+                'tax_amount' => 0,
+                'line_total' => 0,
+            ];
+        }
+
+        return $lines;
+    }
+
+    private function buildInvoiceNotes(CrmFolders $folder): ?string
+    {
+        $parts = array_filter([
+            $folder->ziaraats_makkah ? 'Makkah ziaraat: ' . $folder->ziaraats_makkah : null,
+            $folder->ziaraats_madinah ? 'Madinah ziaraat: ' . $folder->ziaraats_madinah : null,
+            $folder->balanceduedate ? 'Balance due by: ' . $folder->balanceduedate : null,
+        ]);
+
+        return $parts ? implode('. ', $parts) : null;
     }
 
     public function postInvoiceToGl(CustomerInvoice $invoice, int $tenantId, ?int $createdBy): void

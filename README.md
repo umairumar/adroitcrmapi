@@ -102,4 +102,12 @@ npm install && npm run dev
 
 ---
 
+## Travel agency SaaS capabilities
+
+See **[docs/SAAS_PLATFORM.md](docs/SAAS_PLATFORM.md)** for the full feature map (B2B/B2C accounts, pipeline, multi-channel inbox, GL/AR/AP, bank reconciliation, loyalty, analytics, and **PDF invoice generation**).
+
+Invoice quick start: **[docs/INVOICES.md](docs/INVOICES.md)**.
+
+---
+
 # adroitcrmapi (Laravel)

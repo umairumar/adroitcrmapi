@@ -50,6 +50,15 @@ class WhiteLabelController extends Controller
             'email_footer_html' => 'nullable|string',
             'custom_css' => 'nullable|string',
             'is_active' => 'nullable|boolean',
+            'company_address' => 'nullable|string',
+            'company_registration' => 'nullable|string|max:80',
+            'vat_number' => 'nullable|string|max:40',
+            'invoice_bank_name' => 'nullable|string|max:120',
+            'invoice_sort_code' => 'nullable|string|max:20',
+            'invoice_account_number' => 'nullable|string|max:40',
+            'invoice_iban' => 'nullable|string|max:50',
+            'invoice_payment_instructions' => 'nullable|string',
+            'invoice_terms' => 'nullable|string',
         ]);
 
         $tenantId = (int) (TenantContext::id() ?? $request->user()->tenant_id);

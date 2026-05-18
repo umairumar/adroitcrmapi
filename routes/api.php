@@ -275,6 +275,8 @@ Route::prefix('v1')->group(function () {
         Route::post('/finance/journal-entries', [JournalEntryController::class, 'store']);
 
         Route::get('/finance/invoices', [CustomerInvoiceController::class, 'index']);
+        Route::get('/finance/invoices/{id}/preview', [CustomerInvoiceController::class, 'preview']);
+        Route::get('/finance/invoices/{id}/pdf', [CustomerInvoiceController::class, 'pdf']);
         Route::get('/finance/invoices/{id}', [CustomerInvoiceController::class, 'show']);
         Route::post('/finance/folders/{folderId}/invoice', [CustomerInvoiceController::class, 'createFromFolder']);
         Route::post('/finance/invoices/{id}/allocate', [CustomerInvoiceController::class, 'allocate']);
